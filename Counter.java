@@ -1,28 +1,23 @@
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
-
-/**
- * A Swing example component that contains a {@code JButton} that the user can press,
- * and a {@code JLabel} that displays a count of how many times that button has been pressed.
- * @author Ilkka Kokkarinen
- */
+import javax.swing.border.*;
 
 public class Counter extends JPanel {
 
     private int count = 0;
     
-    /**
-     * Basic constructor for this class.
-     */
     public Counter() {
         this.setPreferredSize(new Dimension(200,50));
-        // Every swing component can have a decorative border.
-        this.setBorder(BorderFactory.createLineBorder(Color.RED));
+        // Every Swing component can have a festive and decorative border.
+        this.setBorder(BorderFactory.createSoftBevelBorder(
+            BevelBorder.RAISED, Color.BLUE, Color.CYAN, Color.RED, Color.YELLOW)
+        );
         
-        // When a local variable is accessed from a local nested class, the variable has
-        // to be declared final. (Technical explanation why is quite long even for 209.)
-        final JLabel lab = new JLabel("0");
+        // When a local variable is accessed from a local nested class, that variable has
+        // to be effectively final; that is, either declared final, or never assigned to
+        // after initialization.
+        JLabel lab = new JLabel("0");
         lab.setBorder(BorderFactory.createEtchedBorder());
         this.add(lab);
         
@@ -38,24 +33,21 @@ public class Counter extends JPanel {
                 // As you see, nested class methods can modify the fields of the outer
                 // class object directly without any special syntax...
                 count++;
-                // ... and use the final local variables of the method we are in.
+                // ... and use the effectively final local variables of the method.
                 lab.setText(count + "");
             }    
         }
         but.addActionListener(new MyActionListener());
     }
 
-    /**
-     * Create a {@code JFrame} with three separate {@code Counter} instances inside it.
-     */
     public static void main(String[] args) {
         JFrame f = new JFrame("Counter demo");
         f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        f.setLayout(new FlowLayout());
-        // Let's add three separate Counters, just to show what happens.
-        f.add(new Counter());
-        f.add(new Counter());
-        f.add(new Counter());        
+        f.setLayout(new GridLayout(4, 4));
+        // Let's add sixteen separate Counters, just to show what happens.
+        for(int i = 0; i < 16; i++) {
+            f.add(new Counter());
+        }
         f.pack();
         f.setVisible(true);        
     }    
