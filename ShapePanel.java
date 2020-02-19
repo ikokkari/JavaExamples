@@ -14,7 +14,7 @@ public class ShapePanel extends JPanel {
     private boolean antiAlias;
     
     /**
-     * Constructor the class.
+     * Constructor for the class.
      * @param antiAlias Whether the rendering should be done using anti-aliasing.
      */
     public ShapePanel(boolean antiAlias) {
@@ -31,20 +31,19 @@ public class ShapePanel extends JPanel {
      * @param g The {@code Graphics} object provided by Swing for us to draw on.
      */
     public void paintComponent(Graphics g) {
-        // The first two lines are magic incantations to be explained in 209.
         super.paintComponent(g); // erase previous contents
-        Graphics2D g2 = (Graphics2D)g; // convert to better Graphics2D
+        Graphics2D g2 = (Graphics2D)g; // downcast to better Graphics2D
         if(antiAlias) {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
           RenderingHints.VALUE_ANTIALIAS_ON); // looks nicer
         }
           
-        // https://docs.oracle.com/javase/tutorial/2d/TOC.html
-        
         // A rectangle shape.
         g2.setStroke(new BasicStroke(3.0f));
         g2.setPaint(Color.RED); // uniform colour
         for(int r = 0; r < 150; r += 10) {
+            // If nothing else, admire the existence of one method "draw"
+            // that can draw any Shape that anybody will ever think up.
             g2.draw(new Rectangle2D.Double(100-r/2,100-r/2,r,r));
         }
         
@@ -85,12 +84,13 @@ public class ShapePanel extends JPanel {
         g2.setFont(new Font("Times", Font.ITALIC, 28));
         g2.drawString("Hello, wyrld!", 300, 250); // y reaches below baseline
     }
-    
-    // A JPanel cannot exist alone on the screen; it has to be inside some top-level component.
+   
     /**
      * Create a JFrame, a free-moving window component, and put a ShapePanel inside it.
      */
     public static void main(String[] args) {
+        // A JPanel cannot exist alone on the screen, and must be place inside some
+        // top-level container, which in all our examples will be JFrame.
         JFrame f = new JFrame("ShapePanel demo");
         // Tell the frame to obey the close button
         f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
