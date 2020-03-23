@@ -37,7 +37,21 @@ public class Pair<T, U> {
     }
     
     @Override public int hashCode() {
-        // When creating hash functions, prime numbers and xor are your helpful friends.
-        return (157 * getFirst().hashCode()) ^ (181 * getSecond().hashCode());
+        // When creating hash functions, bit shifts and xor are your helpful friends.
+        int f1 = getFirst().hashCode();
+        int f2 = getSecond().hashCode();
+        f1 = (f1 >> 16) | (f1 << 16);
+        return f1 ^ f2; // Not exponentiation, but bitwise xor
+    }
+    
+    public static void sampleHashCodes() {
+        java.util.HashSet<Integer> seen = new java.util.HashSet<>();
+        java.util.Random rng = new java.util.Random(12345);
+        for(int i = 0; i < 100000; i++) {
+            int a = rng.nextInt();
+            int b = rng.nextInt();
+            seen.add(new Pair<Integer, Integer>(a, b).hashCode());            
+        }
+        System.out.println("Seen " + seen.size() + " hash codes.");
     }
 }

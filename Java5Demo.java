@@ -45,8 +45,8 @@ public class Java5Demo {
         Integer d = 9999;
         Integer e = new Integer(9999);
         if(a == c) { out.println("a == c"); } // true
-        if(b == d) { out.println("b == d"); } // true
-        if(d == e) { out.println("d == e"); } // false (???)
+        if(b == d) { out.println("b == d"); } // true (primitive == wrapper)
+        if(d == e) { out.println("d == e"); } // false (can you explain why?)
     }
     
     // Varargs

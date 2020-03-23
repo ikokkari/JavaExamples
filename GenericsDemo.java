@@ -1,4 +1,5 @@
 import java.util.*;
+import java.math.BigInteger;
 
 public class GenericsDemo {
 
@@ -28,6 +29,38 @@ public class GenericsDemo {
             if(list.get(i).compareTo(list.get(i-1)) < 0) return false;
         }
         return true;
+    }
+    
+    // Even though ArrayList is a subtype of List, and Fraction is a subtype of
+    // Object, it does not follow that ArrayList<Fraction> would be a subtype of
+    // List<Object>. It cannot be, since the latter allows you to add a String
+    // or whatever else kind of objects you want inside the list, whereas the
+    // former can only take in Fraction objects!
+    
+    public static int noNines(List<Object> items) {
+        int count = 0;
+        for(Object item: items) {
+            if(item.toString().indexOf('9') == -1) {
+                count++;
+            }
+        }
+        // For demonstration purposes, a little side effect.
+        items.add("Hello world!");
+        // An instance of List<Fraction> would not be able to do that.
+        return count;
+    }
+    
+    // Knowing that every item is a Fraction, we can be more specific
+    // about what we expect these items are able to do.
+    public static int noNinesInDenominator(List<? extends Fraction> items) {
+        int count = 0;
+        for(Fraction f: items) {
+            BigInteger den = f.getDen();
+            if(den.toString().indexOf('9') == -1) {
+                count++;                
+            }
+        }
+        return count;
     }
     
     // Demonstration how generics and type wildcards work.
@@ -78,5 +111,17 @@ public class GenericsDemo {
         b.add("Hello world");
         addAll(a,b); // in a call to generic method, compiler infers type parameters
         System.out.println("The list is now " + b); // [Hello World, 1, 2, 3, 4, 5];
+        
+        List<Fraction> fs = Arrays.asList(
+            new Fraction(3, 19),
+            new Fraction(7, 18),
+            new Fraction(-1, 99),
+            new Fraction(12345, 54321)
+        );
+        int noNinesDen = noNinesInDenominator(fs);
+        System.out.println("The list contains " + noNinesDen +
+            " fractions without a nine in denominator.");
+        // This call would not compile, uncomment to convince yourself.
+        // int noNines = noNines(fs);        
     }
 }
