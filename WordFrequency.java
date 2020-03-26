@@ -1,6 +1,5 @@
 import java.io.*;
 import java.util.*;
-import java.util.regex.*;
 
 public class WordFrequency {
     
@@ -18,14 +17,14 @@ public class WordFrequency {
       { "mustn't", "must not" }
     };
     
-    private static String wordSeparators = "(\\s|[0-9]|[()/'\":;*,-.!?])+";
+    private static String wordSeparators = "[^a-z]+";
     
     public static Map<String, Integer> wordFrequencies(Scanner s) {
         Map<String, Integer> freqs = new HashMap<>();
         while(s.hasNextLine()) {
             String line = s.nextLine().trim().toLowerCase();
-            for(int i = 0; i < replacements.length; i++) {
-                line = line.replaceAll(replacements[i][0], replacements[i][1]);
+            for(String[] repl: replacements) {
+                line = line.replaceAll(repl[0], repl[1]);
             }
             line = line.replaceAll("'s\\b", ""); // In regex, \b is word boundary marker
             line = line.replaceAll("'ll\\b", " will");
@@ -66,7 +65,7 @@ public class WordFrequency {
     
     // For demonstration purposes, some word frequencies from "War and Peace".
     public static void main(String[] args) throws IOException {
-        final Map<String, Integer> freqs = 
+        Map<String, Integer> freqs = 
             wordFrequencies(new Scanner(new File("warandpeace.txt")));
         System.out.println("Found " + freqs.size() + " distinct words.\n");
         System.out.println("Some occurrence counts are: ");
