@@ -5,10 +5,10 @@ import javax.swing.border.*;
 
 public class Counter extends JPanel {
 
-    private int count = 0;
+    private static int count = 0;
     
     public Counter() {
-        this.setPreferredSize(new Dimension(200,50));
+        this.setPreferredSize(new Dimension(300, 80));
         // Every Swing component can have a festive and decorative border.
         this.setBorder(BorderFactory.createSoftBevelBorder(
             BevelBorder.RAISED, Color.BLUE, Color.CYAN, Color.RED, Color.YELLOW)
@@ -19,9 +19,11 @@ public class Counter extends JPanel {
         // after initialization.
         JLabel lab = new JLabel("0");
         lab.setBorder(BorderFactory.createEtchedBorder());
+        lab.setFont(new Font("Courier", Font.BOLD, 50));
         this.add(lab);
         
         JButton but = new JButton("Press me");
+        but.setFont(new Font("Arial", Font.PLAIN, 28));
         but.setToolTipText("Click to increase the count");
         this.add(but);
         

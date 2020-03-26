@@ -10,7 +10,7 @@ public class CollectionsDemo {
         TreeSet<Integer> tsd = new TreeSet<Integer>();
         
         // First, the dynamic set operations add, remove and contains.
-        tsd.add(42); tsd.add(99);
+        tsd.add(42); tsd.add(99); tsd.add(99);
         System.out.println("Our example treeset: " + tsd); // decent toString() 
         
         // Dumb way to do the following. Used here only for demonstration purposes.
@@ -24,7 +24,7 @@ public class CollectionsDemo {
             if(tsd.contains(i)) { System.out.println("Element " + i + " was found"); }
         }
         
-        // Two collections are equal if they are of same type and have equal elements.
+        // Two collections are equal if they are of same general type with equal elements.
         TreeSet<Integer> tsd2 = new TreeSet<Integer>();
         tsd2.add(99);
         HashSet<Integer> hs = new HashSet<Integer>();
@@ -235,7 +235,7 @@ public class CollectionsDemo {
         System.out.println("Sorted normally:");
         Collections.sort(ai);
         System.out.println(ai);
-        System.out.println("Largest element is " + Collections.max(ai));
+        System.out.println("Largest element is " + Collections.max(ai) + ".");
         
         System.out.println("Sorted with a counting oddeven Comparator:");
         CountingComparator<Integer> comp = new CountingComparator<Integer>(new OddEvenComparator());

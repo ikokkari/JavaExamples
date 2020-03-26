@@ -30,7 +30,7 @@ public class ShapePanel extends JPanel {
      * Render this component as it currently looks like.
      * @param g The {@code Graphics} object provided by Swing for us to draw on.
      */
-    public void paintComponent(Graphics g) {
+    @Override public void paintComponent(Graphics g) {
         super.paintComponent(g); // erase previous contents
         Graphics2D g2 = (Graphics2D)g; // downcast to better Graphics2D
         if(antiAlias) {
@@ -44,7 +44,7 @@ public class ShapePanel extends JPanel {
         for(int r = 0; r < 150; r += 10) {
             // If nothing else, admire the existence of one method "draw"
             // that can draw any Shape that anybody will ever think up.
-            g2.draw(new Rectangle2D.Double(100-r/2,100-r/2,r,r));
+            g2.draw(new Rectangle2D.Double(100 - r/2,100 - r/2, r, r));
         }
         
         // A rectangle with round corners.
@@ -58,7 +58,7 @@ public class ShapePanel extends JPanel {
         // An ellipse shape, defined with invisible bounding rectangle.
         g2.setPaint(new GradientPaint(370, 100, Color.BLACK,
           360, 130, Color.WHITE));
-        g2.fill(new Ellipse2D.Double(350,50,70,140));
+        g2.fill(new Ellipse2D.Double(350, 50, 70, 140));
         
         // A more complex polygon shape that is partially outside the component bounds.
         Path2D.Double path = new Path2D.Double(); // outline path of the shape
