@@ -22,6 +22,7 @@ public class MySemaphore {
                 // Wait for one permit to become available.
                 permitAvailable.await();
             }
+            assert permits > 0;
             permits--;
         }
         // Ensure that mutex is unlocked even if an exception is thrown.

@@ -26,7 +26,7 @@ public class BigPrimes {
     
     /* A class representing the worker task of finding a random prime. */
     private static class PrimeFinder implements Callable<BigInteger> {
-        private static AtomicInteger count = new AtomicInteger(0); // Thread-safe ID generator.
+        private static AtomicInteger count = new AtomicInteger(0);
         private int id; // The numerical ID of this task.
         private int bits; // How many bits the prime number should contain.
         private FinalCall done; // Continuation to execute after finding the prime.
@@ -122,7 +122,8 @@ public class BigPrimes {
             es.submit(new PrimeFinder(bits, prime -> primes.put(prime)));
         }
         // The blocking queue will block until next prime becomes available.
-        for(int i = 0; i < n; i++) { result.add(primes.take()); }
+        result.addAll(primes);
+        //for(int i = 0; i < n; i++) { result.add(primes.take()); }
         es.shutdownNow(); // tell the ExecutorService to release its threads
         assert result.size() == n; return result;                
     }
