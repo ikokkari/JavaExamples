@@ -41,7 +41,7 @@ public class Minesweeper extends JPanel {
         startNewGame();
     }
 
-    // Count how many neighbours of tile (x,y) are true in the data array.
+    // Count how many neighbours of tile (x, y) are true in the data array.
     private int countNeighbours(boolean[][] data, int x, int y) {
         int sum = 0;
         if(x > 0) {
@@ -70,7 +70,7 @@ public class Minesweeper extends JPanel {
         isOpen = new boolean[gridWidth][gridHeight];
         isMarked = new boolean[gridWidth][gridHeight];
         value = new int[gridWidth][gridHeight];
-        repaint();
+        this.repaint();
     }
     
     // Each tile becomes a mine with the given probability, independent of other tiles.
@@ -125,7 +125,7 @@ public class Minesweeper extends JPanel {
     }
 
     private class MineListener extends MouseAdapter {            
-        public void mousePressed(MouseEvent me) {
+        @Override public void mousePressed(MouseEvent me) {
             if(gameOn == false) { startNewGame(); return; }
             int x = (me.getX() - XOFFSET) / TILESIZE;
             int y = (me.getY() - YOFFSET) / TILESIZE;
@@ -149,8 +149,8 @@ public class Minesweeper extends JPanel {
         // The other four MouseListener methods are inherited from MouseAdapter.
     }
 
-    // Open the tile (x,y). If neighbours is true, do not open but perform the check
-    // of whether some tiles can be safely opened.
+    // Open the tile (x, y). If neighbours is true, do not open but check whether
+    // some tiles can be safely opened. Returns true if hit a mine, false if not.
     private boolean openTile(int x, int y, boolean neighbours) {
         if(x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) {
             return false; // out of bounds, do nothing
@@ -166,7 +166,7 @@ public class Minesweeper extends JPanel {
         }
         // Generalization of the zero cell opening makes the game more fun
         boolean result = false;
-        if(value[x][y] == countNeighbours(isMarked, x, y) ) {
+        if(value[x][y] == countNeighbours(isMarked, x, y)) {
             result |= openTile(x-1, y-1, false);
             result |= openTile(x-1, y, false);
             result |= openTile(x-1, y+1, false);
