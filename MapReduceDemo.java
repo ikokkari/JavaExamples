@@ -7,6 +7,8 @@ public class MapReduceDemo {
 
     // IntPredicate object defined as a lambda: the compiler expands
     // all that anonymous subclass boilerplate rigmarole automatically.
+    // This predicate is stateless, so it can be used in a parallel
+    // stream of integers as well as sequential stream.
     private static IntPredicate primeTester = n -> {
         if(n < 2) { return false; }
         if(n == 2) { return true; }
@@ -22,14 +24,14 @@ public class MapReduceDemo {
         // generated from the floors of the decimal numbers generated from
         // the given rng, but excluding the first ten.
         System.out.println("The sum of asked squares is " + 
-            new Random().doubles()
-            .map(x -> Math.sqrt(x * 1000 + 3))
-            .mapToInt(x -> (int)Math.floor(x)) // these two can be done in parallel
+            new Random(12345).doubles()
+            .map(x -> Math.sqrt(x * 1_000_000 + 3))
+            .mapToInt(x -> (int)Math.floor(x))
             .filter(primeTester) // longer way: .filter(x -> primeTester.test(x))
             .skip(10) // skip the first 10
             .limit(90) // and take the first 90 of the rest
             .map(e -> e * e) // square the numbers
-            .reduce(0, (x,y) -> x+y) // and add them up
+            .reduce(0, (state, element) -> state + element) // and add them up
         );
         
         // Many other standard classes in Java are retrofitted to generate streams.
@@ -51,7 +53,7 @@ public class MapReduceDemo {
         System.out.println("Lazy evaluation with long, even infinite streams");
         Stream.generate( () -> 42 ) // A stateless infinite stream 42, 42, 42, ...
             .limit(10) // that we cap to the maximum length of 10
-            .forEach(x -> System.out.print(x + " ")); // to print out the elements
+            .forEach(System.out::println); // to print out the elements
         
         // A huge stream 0, 1, 2, ... , 1,000,000,000. No problem, since Java 8
         // streams are evaluated in a lazy fashion.

@@ -33,8 +33,8 @@ public class ImageLoops {
         class ImagePanel extends JPanel {
             private BufferedImage[] imgs = new BufferedImage[6];
             public ImagePanel() {
-                this.setPreferredSize(new Dimension(680, 480));
-                this.setBackground(Color.WHITE);
+                this.setPreferredSize(new Dimension(680, 460));
+                this.setBackground(new Color(30, 30, 60));
                 imgs[0] = computeImage(200, 200,
                     (x, y) -> (x / 20) % 2 != (y / 20) % 2
                 );
@@ -68,8 +68,6 @@ public class ImageLoops {
                         int row = i / 3;
                         int col = i % 3;
                         g.drawImage(imgs[i], 20 + 220 * col, 20 + 220 * row, this);
-                        g.setColor(Color.GRAY);
-                        g.drawRect(19 + 220 * col, 19 + 220 * row, 200, 200);
                     }
                 }
             }
@@ -80,6 +78,3 @@ public class ImageLoops {
         f.setVisible(true);        
     }
 }
-
-// To see what can be done by adding the dimensions of time and colour
-// to the functions, spend some time at http://beesandbombs.tumblr.com/
