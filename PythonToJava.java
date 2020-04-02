@@ -19,18 +19,20 @@ public class PythonToJava {
     // In Java, braces denote structure. Indentation is only for the human reader,
     // the compiler does not care about it. In theory, you could write your entire
     // Java program in one horrendously long line. (But please don't do that.)
-    
+
     // Static methods inside a class correspond to Python functions. Java is
     // explicitly typed at compile time, so that all data must be declared its
     // type at compile time, so that the compiler can enforce that all data is 
     // used only according to that declared type. This allows many errors to be
     // caught in the compile time, before the unit testing.
-    
+
     public static String ryersonLetterGrade(int pct) {
         // Local variable declarations must also be explicitly typed.
         String result = "";
         // Handle F and A levels as special cases.
-        if(pct < 50) { result = "F"; } // condition must be inside parentheses
+        if(pct < 50) { 
+            result = "F"; 
+        } // condition must be inside parentheses
         else if(pct >= 90) { result = "A+"; } // else if, not elif
         else if(pct >= 85) { result = "A"; }
         else if(pct >= 80) { result = "A-"; }
@@ -44,7 +46,7 @@ public class PythonToJava {
         }
         return result;        
     }
-    
+
     // In Java, an array is a homogeneous list whose length cannot be changed, akin
     // to the numpy arrays except without reshaping and always one-dimensional. To
     // create an array whose elements are of type Foo, use the type Foo[].
@@ -61,13 +63,13 @@ public class PythonToJava {
         }
         return result;
     }
-    
+
     // In java.util, the List hierarchy offers a higher level abstraction of a
     // sequence. The ArrayList is pretty close Python lists in behaviour. However,
     // in Java generics, primitive types cannot be used as type arguments to create
     // a type instantiation of a generic class. However, Java can automatically
     // convert between primitive type (int) and its wrapper class (Integer).
-    
+
     public static boolean checkPermutation(List<Integer> items, int n) {
         // Keep track of which numbers 1 to n we have already seen here.
         boolean[] alreadySeen = new boolean[n + 1];
@@ -79,7 +81,7 @@ public class PythonToJava {
         }
         return true;
     }
-    
+
     // Java only has one-dimensional arrays. Arrays of higher dimension of n are
     // simulated with one-dimensional arrays whose elements are arrays of dimension
     // n - 1. To access an individual row as a one-dimensional array, use one index,
@@ -93,10 +95,10 @@ public class PythonToJava {
         }
         return b;
     }    
-    
+
     // Unlike numpy arrays, Java two-dimensional arrays can be ragged, meaning that
     // different rows can have different lengths. Each row is a separate 1D array
-    // object anyway and not bound by the lengths of other row arrays.
+    // object anyway and not restricted by the lengths of other row arrays.
     public static int[][] pascalTriangle(int n) {
         // Create just the array of arrays, but not the individual rows.
         int[][] result = new int[n][];
@@ -110,7 +112,7 @@ public class PythonToJava {
         }
         return result;
     }
-    
+
     // Java has a while-loop and for-loop, but then also a do-while loop that Python
     // does not have. In practice it is quite rare, maybe about 2% of all loops. But
     // when it is time to use it, then it is time to use it. Here is a blast from the
@@ -128,16 +130,16 @@ public class PythonToJava {
         if(verbose) { System.out.println("Returning result " + guess); }
         return guess;
     }
-    
+
     // Java does not offer default or keyword arguments. Instead, variations are
     // expressed with method overloading inside the same class. Unlike Python, where
     // each name is bound to exactly one object, the same method name can be bound
     // to multiple implementations that differ by their parameter types.
-    
+
     public static double heronRoot(double x) {
         return heronRoot(x, false);
     }
-    
+
     // Java and similar languages have a switch-statement for long if-else ladders.
     // The moronic thing about it is having to end each case with an explicit break,
     // otherwise the execution will just "fall through" to execute the next case.
@@ -158,7 +160,7 @@ public class PythonToJava {
         }
         return days;
     }
-    
+
     // Same as in Python, Java strings are immutable. For the common operation of
     // building up a string by appending stuff piecemeal, use mutable StringBuilder.
     public static String countAndSay(String digits) {
@@ -181,7 +183,7 @@ public class PythonToJava {
         // Convert mutable StringBuilder into an immutable String when finished.
         return result.toString();
     }
-    
+
     // java.util.Set hierarchy contains set implementations. The two most important
     // of those are HashSet (hash table, unsorted iteration) and TreeSet (binary 
     // search tree, guarantees sorted order of iteration through elements). Their
@@ -199,38 +201,14 @@ public class PythonToJava {
         // we used a TreeSet instead of HashSet, iteration guarantees sorted order.
         return new ArrayList<String>(alreadySeen);
     }
-    
+
     // Members of class marked private may not be accessed from the outside.    
     private static List<BigInteger> fibs = new ArrayList<BigInteger>();
     static { // Executed when the class bytecode is loaded into JVM.
         fibs.add(BigInteger.ONE); // First two Fibonacci numbers are 1, 1.
         fibs.add(BigInteger.ONE);
     }
-    
-    // Java primitive integer types byte, short, int and long are stored in
-    // 1, 2, 4 and 8 bytes, respectively. To use integers of unlimited size
-    // the way Python does right out of the box, use the class BigInteger.
-    public static List<BigInteger> fibonacciSum(BigInteger n) { 
-        // Java does not understand negative indexing from the end. Or operator
-        // overloading with magic methods for the classes that we write.
-        while(n.compareTo(fibs.get(fibs.size() - 1)) >= 0) {
-            BigInteger next = fibs.get(fibs.size() - 1).add(fibs.get(fibs.size() - 2));
-            fibs.add(next);
-        }
-        // Now our fibs list will contain a Fibonacci number >= n. Time to break it up:
-        List<BigInteger> result = new ArrayList<BigInteger>();
-        int idx = fibs.size() - 1;
-        while(n.compareTo(BigInteger.ZERO) > 0) {
-            BigInteger fib = fibs.get(idx);
-            if(n.compareTo(fib) >= 0) {
-                result.add(fib);
-                n = n.subtract(fib);
-            }
-            idx--;
-        }
-        return result;
-    }
-    
+
     // The starting point of execution when a Java class is run as a standalone program.
     // Similar to spirit to Python construct if __name__ == '__main__':
     public static void main(String[] args) {
@@ -243,7 +221,7 @@ public class PythonToJava {
         System.out.printf("Once riffled, these elements are %s.\n", Arrays.toString(ar));
         ar = riffle(ar);
         System.out.printf("Riffled again, these elements are %s.\n", Arrays.toString(ar));
-        
+
         List<Integer> p = new ArrayList<Integer>(); // Empty list
         // (Java does not have Python list comprehensions.)
         for(int i = 0; i < 10; i++) { p.add(i + 1); } // Add elements to it.
@@ -252,7 +230,7 @@ public class PythonToJava {
             Collections.shuffle(p);
             System.out.println(p + " is permutation: " + checkPermutation(p, 10));
         }
-        
+
         Random rng = new Random(12345);
         System.out.println("\nTo demonstrate 2D arrays, transpose a 2D matrix.");
         double[][] mat = { {1.0, -2.2, 5.1, 99}, {-4.3, 1.234, Math.sqrt(7), rng.nextDouble()} };
@@ -260,7 +238,7 @@ public class PythonToJava {
         System.out.println(Arrays.deepToString(mat));
         System.out.println("Matrix rows after transpose:");
         System.out.println(Arrays.deepToString(transpose(mat)));
-        
+
         System.out.println("\nThe first 15 rows of Pascal's triangle.");
         int[][] pascal = pascalTriangle(15);
         for(int row = 0; row < pascal.length; row++) {
@@ -270,30 +248,23 @@ public class PythonToJava {
             }
             System.out.println("");
         }
-        
+
         System.out.println("\nSquare root of 2.0 equals about " + heronRoot(2.0) + ".");
-        
+
         System.out.println("\nThe number of days in each month is:");
         for(int m = 1; m <= 12; m++) {
             if(m > 1) { System.out.print(", "); }
             System.out.print(daysInMonth(m, false));
         }
-        
+
         String digits = "333388822211177";
         System.out.println("\n\n\"Count and say\" for digits " + digits + " produces "
             + countAndSay(digits) + ".");
-        
+
         String[] pats = {"01001", "010101", "hello", "xxxxxxx"};
         System.out.println("\nAll cyclic shifts of some example strings, in sorted order.");
         for(String pat: pats) {
             System.out.println(pat + ": " + allCyclicShifts(pat));
-        }
-        
-        System.out.println("\nFinally, some powers of ten broken down to Fibonacci sums.");
-        for(int i = 1; i < 11; i++) {
-            if(i == 10) { i = 100; }
-            BigInteger bigPow = new BigInteger("10").pow(i);
-            System.out.println("10**" + i + ": " + fibonacciSum(bigPow));
         }
     }
 }
