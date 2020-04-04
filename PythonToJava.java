@@ -1,8 +1,6 @@
-// Demonstration of various things that are different in Python and Java. These
-// examples are mainly taken from author's Python 109 graded labs collection at
-// https://docs.google.com/document/d/1IbbZOHwH4gjZ70XtP_rH6QhX3BeDd1ANxj1DYaFUPXk/
+// Demonstration of various things that are different in Python and Java.
 
-// All package imports must be placed at the beginning of the file.
+// In Java, all package imports must be placed at the beginning of the file.
 
 import java.math.BigInteger; // akin to "from java.math import BigInteger"
 import java.util.*; // akin to "from java.util import *"
@@ -11,14 +9,15 @@ import java.util.*; // akin to "from java.util import *"
  * Java program must consist of classes, one class per file. The source code for
  * the class named Foo must be stored in a file that is named precisely Foo.java.
  * From that, the compiler will produce the executable bytecode file Foo.class.
- * The compilation stage must be incurred explicitly, unlike in Python.
+ * The compilation stage must be incurred explicitly, unlike in Python where it
+ * is done silently when you execute the Python source code file.
  */
 
 public class PythonToJava {
 
-    // In Java, braces denote structure. Indentation is only for the human reader,
-    // the compiler does not care about it. In theory, you could write your entire
-    // Java program in one horrendously long line. (But please don't do that.)
+    // In Java, braces denote structure. Indentation is only for the human eyes,
+    // the compiler does not care about it. In theory, you could write an entire
+    // Java program in one horrendously long line. (Please don't ever do that.)
 
     // Static methods inside a class correspond to Python functions. Java is
     // explicitly typed at compile time, so that all data must be declared its
@@ -40,16 +39,17 @@ public class PythonToJava {
         else { 
             int tens = pct / 10; // This is now known to be 5, 6 or 7.
             result = "DCB".substring(tens - 5, tens - 4); // (cute trick)
-            int ones = pct % 10; // Remainder operator % same as in Python.
-            if(ones < 3) { result += "-"; }
+            int ones = pct % 10; // Integer remainder operator %, as in Python.
+            if(ones < 3) { result += "-"; } // Shorthand a += b for a = a + b;
             else if(ones > 6) { result += "+"; }
         }
         return result;        
     }
 
-    // In Java, an array is a homogeneous list whose length cannot be changed, akin
-    // to the numpy arrays except without reshaping and always one-dimensional. To
-    // create an array whose elements are of type Foo, use the type Foo[].
+    // In Java, an array is a homogeneous sequence whose length cannot change, akin
+    // to the numpy arrays except without reshaping and always one-dimensional. In
+    // the type system, Foo[] is an array whose elements are of type Foo. With arrays,
+    // Foo can be either a primitive type or a class.
     public static int[] riffle(int[] items) {
         // Java does not have a polymorphic len function on sequences.
         int n = items.length / 2; // Operator / is integer division for int operands.
@@ -84,10 +84,11 @@ public class PythonToJava {
 
     // Java only has one-dimensional arrays. Arrays of higher dimension of n are
     // simulated with one-dimensional arrays whose elements are arrays of dimension
-    // n - 1. To access an individual row as a one-dimensional array, use one index,
+    // n-1. To access an individual row as a one-dimensional array, use one index,
     // same as with a Python list whose elements are lists.
     public static double[][] transpose(double[][] a) {
         double[][] b = new double[a[0].length][a.length];
+        // Operator ++ is shorthand for adding one. Operator -- would decrement.
         for(int i = 0; i < b.length; i++) {
             for(int j = 0; j < b[i].length; j++) {
                 b[i][j] = a[j][i];
@@ -96,7 +97,7 @@ public class PythonToJava {
         return b;
     }    
 
-    // Unlike numpy arrays, Java two-dimensional arrays can be ragged, meaning that
+    // Unlike numpy arrays, two-dimensional arrays Java can be ragged, which means
     // different rows can have different lengths. Each row is a separate 1D array
     // object anyway and not restricted by the lengths of other row arrays.
     public static int[][] pascalTriangle(int n) {
@@ -112,7 +113,7 @@ public class PythonToJava {
         }
         return result;
     }
-
+    
     // Java has a while-loop and for-loop, but then also a do-while loop that Python
     // does not have. In practice it is quite rare, maybe about 2% of all loops. But
     // when it is time to use it, then it is time to use it. Here is a blast from the
