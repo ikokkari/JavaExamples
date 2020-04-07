@@ -3,6 +3,9 @@ import java.io.*;
 
 public class DissociatedPress {
     
+    // To run this program, replace FILENAME with some text file that you have.
+    private static final String FILENAME = "warandpeace.txt";
+    
     private static final Random rng = new Random();
     
     private Map<String, String> followMap = new HashMap<String, String>();
@@ -90,7 +93,7 @@ public class DissociatedPress {
      * to produce sample random test for possible pattern lengths from 1 to 6.
      */
     public static void main(String[] args) throws IOException {
-        Scanner wap = new Scanner(new File("warandpeace.txt"));
+        Scanner wap = new Scanner(new File(FILENAME));
         DissociatedPress dp = new DissociatedPress();
         while(wap.hasNextLine()) {
             String line = wap.nextLine(); // nextLine() strips away newline character

@@ -3,6 +3,9 @@ import java.util.*;
 
 public class WordFrequency {
     
+    // To run this program, change the FILENAME to some text file that you have.
+    private static final String FILENAME = "warandpeace.txt";
+    
     private static String[][] replacements = {
       { "doesn't", "does not" },
       { "don't", "do not" },
@@ -66,7 +69,7 @@ public class WordFrequency {
     // For demonstration purposes, some word frequencies from "War and Peace".
     public static void main(String[] args) throws IOException {
         Map<String, Integer> freqs = 
-            wordFrequencies(new Scanner(new File("warandpeace.txt")));
+            wordFrequencies(new Scanner(new File(FILENAME)));
         System.out.println("Found " + freqs.size() + " distinct words.\n");
         System.out.println("Some occurrence counts are: ");
         String[] words = {
