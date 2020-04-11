@@ -3,6 +3,11 @@ import java.util.*;
 
 // https://en.wikipedia.org/wiki/Continued_fraction
 
+// A decorator that takes an existing Iterator<Integer> and treats the
+// values it produces as coefficients of a continuing fraction, and
+// produces the sequence of exact integer Fractions defined by these
+// coefficients so far.
+
 public class ContinuedFraction implements Iterator<Fraction> {
     
     // The continued fraction so far simplified to its lowest form.
@@ -21,7 +26,7 @@ public class ContinuedFraction implements Iterator<Fraction> {
         // If the current state is a/b, next state is given by 1/(v + a/b)...
         BigInteger a = state.getNum();
         BigInteger b = state.getDen();
-        // ...which simplifies to 1/((bv+a)/b), and that one, to b/(bv+a) 
+        // ...which simplifies to 1/((bv+a)/b), which equals b/(bv+a) 
         state = new Fraction(b, b.multiply(new BigInteger(""+v)).add(a));
         return state;
     }
@@ -30,8 +35,11 @@ public class ContinuedFraction implements Iterator<Fraction> {
      * Output the first 1000 digits after the decimal point of the Golden ratio.
      * Of all irrational numbers, the Golden ratio has the simplest possible
      * representation as a continued fraction, with each term of the infinite
-     * series being equal to 1. Other famous irrationals such as pi and e have
-     * more complicated continued fraction forms.
+     * series being equal to 1. Unfortunately, other famous irrationals such as
+     * pi and e tend to have more complicated continued fraction forms. However,
+     * this same idea generalizes to more powerful representations as sequences
+     * of integers that allows us to compute even those irrationals out up to
+     * any finite precision we wish.
      */
     
     public static void computeGoldenRatioDemo() {
