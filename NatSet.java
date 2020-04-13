@@ -19,6 +19,8 @@ public class NatSet {
     private boolean[] data;
     // Inside the data array, every position < pos contains the value true.
     private int pos = 0;
+    // We might as well allow the outside code become aware of this fact.
+    public long allTrueUpTo() { return start + pos; }
     
     public NatSet() {
         data = new boolean[PAGE];
@@ -59,7 +61,7 @@ public class NatSet {
         // No else here, since adding an element < start changes nothing.
     }
     
-    public boolean contains(int n) {
+    public boolean contains(long n) {
         // Everything to the left of the sliding window is member.
         if(n < start) { return true; }
         // Everything to the right of the sliding window is a nonmember.
