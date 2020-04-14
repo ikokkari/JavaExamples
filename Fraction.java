@@ -134,7 +134,22 @@ public class Fraction implements Comparable<Fraction> {
             return false;
         }
     }    
-        
+    
+    /**
+     * Compute the hash code for this object. We combine the hash code from
+     * the hash codes of the numerator and denominator. The bytes of the
+     * denominator's hash code are swapped before combining results with
+     * "exclusive or" operator ^, which you note does not mean the power
+     * function in Java. Java does not have a power function at all, and
+     * Python power function is **, with ^ in the same "xor" role as here.
+     * @return The hash code of this Fraction.
+     */
+    public int hashCode() {
+        int h = den.hashCode();
+        h = (h >> 16) | (h << 16);
+        return num.hashCode() ^ den.hashCode();
+    }
+    
     /**
      * The ordering comparison of fractions.
      * @param other The other fraction of the order comparison.
