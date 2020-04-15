@@ -140,14 +140,18 @@ public class Fraction implements Comparable<Fraction> {
      * the hash codes of the numerator and denominator. The bytes of the
      * denominator's hash code are swapped before combining results with
      * "exclusive or" operator ^, which you note does not mean the power
-     * function in Java. Java does not have a power function at all, and
-     * Python power function is **, with ^ in the same "xor" role as here.
+     * function in Java. Java does not have an integer power function at all.
+     * Python's power function is **, with ^ in the same "xor" role as here.
      * @return The hash code of this Fraction.
      */
     public int hashCode() {
-        int h = den.hashCode();
-        h = (h >> 16) | (h << 16);
-        return num.hashCode() ^ den.hashCode();
+        int hd = den.hashCode();
+        int hn = num.hashCode();
+        // As not to hash a/b and b/a to the same value, do some bitwise
+        // arithmetic to one of their hash codes to break the symmetry.
+        hd = (hd >> 16) | (hd << 16);
+        // Hash codes are often combined from pieces with bitwise arithmetic.
+        return hn ^ hd; // ^ is bitwise xor, not exponentiation.
     }
     
     /**
