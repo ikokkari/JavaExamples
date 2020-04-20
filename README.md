@@ -1,6 +1,8 @@
-# Java example classes from CCPS 109 and CCPS 209
+# CCPS 209 Computer Science II
 
-A collection of Java example classes from the courses CCPS 109 *Computer Science I* (old Java version not taught any more) and CCPS 209 *Computer Science II*, as taught by [Ilkka Kokkarinen](http://scs.ryerson.ca/~ikokkari) for the Chang School of Continuing Education, Ryerson University, Toronto, Ontario.
+Course material for the *CCPS 209 Computer Science II* as prepared and taught by [Ilkka Kokkarinen](http://scs.ryerson.ca/~ikokkari) for the Chang School of Continuing Education, Ryerson University, Toronto, Ontario.
+
+The outline for the course is in the document [CCPS 209 Modules](https://github.com/ikokkari/JavaExamples/blob/master/CCPS%20209%20Modules.pdf), and the lecture notes are in the document [CCPS 209 Course Notes](https://github.com/ikokkari/JavaExamples/blob/master/CCPS%20209%20Course%20Notes.pdf).
 
 The YouTube playlist [CCPS 209 Computer Science II, Java](https://www.youtube.com/playlist?list=PLm1Sd7Iw1hHsRtM6KX5-XKGmOOvcDPBiB) collects the author's video lectures of this material.
 
