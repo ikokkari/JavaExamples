@@ -10,18 +10,9 @@ import javax.imageio.ImageIO; // image read and write from file
 // operations such as colour conversion, cropping and rotation on images.
 
 public class ImageOpsDemo {
-
-    // A crude but working way to turn an Image into a BufferedImage is to
-    // simply draw it into a blank BufferedImage of the same dimensions.
-    public static BufferedImage toBufferedImage(Image img) {
-    BufferedImage result = new BufferedImage(img.getWidth(null), img.getHeight(null),
-            BufferedImage.TYPE_3BYTE_BGR);
-        result.getGraphics().drawImage(img, 0, 0, null);
-        return result;    
-    }
     
     // An example of filtering an image with a subtype of RGBImageFilter.
-    public static BufferedImage scrambleRGB(Image img, final int xs, final int ys) {
+    public static Image scrambleRGB(Image img, final int xs, final int ys) {
         class Scramble extends RGBImageFilter {
             public int filterRGB(int x, int y, int rgb) {
                 // Extract the individual rgb values from the packed int.
@@ -46,13 +37,13 @@ public class ImageOpsDemo {
         ImageFilter filter = new Scramble();
         ImageProducer producer = new FilteredImageSource(img.getSource(), filter);
         Image image = Toolkit.getDefaultToolkit().createImage(producer);
-        return toBufferedImage(image);
+        return image;
     }
     
-    public static Image rotate(BufferedImage img, int steps) {
+    public static Image rotate(Image img, int steps) {
         // Rotations are special case of affine transforms.
         AffineTransform rot90 = AffineTransform.getRotateInstance(
-            steps * Math.PI / 2, img.getWidth() / 2, img.getHeight() / 2
+            steps * Math.PI / 2, img.getWidth(null) / 2, img.getHeight(null) / 2
         );
         // Create a BufferedImageOp from that transformation.
         BufferedImageOp aop = new AffineTransformOp(rot90, AffineTransformOp.TYPE_BICUBIC);
@@ -108,15 +99,13 @@ public class ImageOpsDemo {
     
     public static void main(String[] args) throws IOException {
         // Read the image from the file.
-        Image cof = ImageIO.read(new File("coffee.jpg"));
+        Image coffee = ImageIO.read(new File("coffee.jpg"));
         // Create a smaller version of the image.
-        cof = cof.getScaledInstance(800, 600, Image.SCALE_SMOOTH);
-        // Crop a square area from the image.
+        coffee = coffee.getScaledInstance(800, 600, Image.SCALE_SMOOTH);
+        // Crop into a square area.
         ImageFilter cf = new CropImageFilter(100, 0, 600, 600);
-        ImageProducer producer = new FilteredImageSource(cof.getSource(), cf);
-        cof = Toolkit.getDefaultToolkit().createImage(producer);
-        // Now we have a square BufferedImage to use.
-        BufferedImage coffee = toBufferedImage(cof);
+        ImageProducer producer = new FilteredImageSource(coffee.getSource(), cf);
+        coffee = Toolkit.getDefaultToolkit().createImage(producer);
         
         JFrame f = new JFrame("Image Operations Demo");
         f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
