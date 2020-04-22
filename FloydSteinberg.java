@@ -152,16 +152,17 @@ public class FloydSteinberg {
     }
     
     public static void main(String[] args) {
-        Image mandel = Toolkit.getDefaultToolkit().getImage("mandelbrot.jpg");
+        Image coffee = Toolkit.getDefaultToolkit().getImage("coffee.jpg");
+        coffee = coffee.getScaledInstance(400, 250, Image.SCALE_SMOOTH);
         MediaTracker m = new MediaTracker(new JPanel());
-        m.addImage(mandel, 0);
+        m.addImage(coffee, 0);
         try { m.waitForAll(); } catch(InterruptedException e) { }
         
         // The trivial way to convert an arbitrary Image to BufferedImage...
         BufferedImage img = new BufferedImage(
-            mandel.getWidth(null), mandel.getHeight(null), BufferedImage.TYPE_INT_RGB
+            coffee.getWidth(null), coffee.getHeight(null), BufferedImage.TYPE_INT_RGB
         );
-        img.getGraphics().drawImage(mandel, 0, 0, null); // ... is to draw it inside one
+        img.getGraphics().drawImage(coffee, 0, 0, null); // ... is to draw it inside one
         
         // Demonstrate the Floyd-Steinberg algorithm with some simple restricted palettes.
         

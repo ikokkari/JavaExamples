@@ -13,7 +13,7 @@ import javax.imageio.ImageIO; // image read and write from file
  */
 
 public class ImageDemo extends JPanel {
-    private Image mandel, flappy, lilMandel;
+    private Image coffee, flappy, lilcoffee;
     private BufferedImage bimg1, bimg2;
     private Random rng = new Random();
     
@@ -24,12 +24,13 @@ public class ImageDemo extends JPanel {
     
     public ImageDemo() throws IOException {
         // We can read an image from gif, jpeg, png file...
-        mandel = ImageIO.read(new File("mandelbrot.jpg"));
+        coffee = ImageIO.read(new File("coffee.jpg"));
         flappy = ImageIO.read(new File("flappy.png"));
         // Take a wild guess which ImageIO method would then write an image to a file.
         
         // Images can be easily scaled to desired size.
-        lilMandel = mandel.getScaledInstance(50, 50, Image.SCALE_AREA_AVERAGING);
+        coffee = coffee.getScaledInstance(800, 600, Image.SCALE_AREA_AVERAGING);
+        lilcoffee = coffee.getScaledInstance(50, 50, Image.SCALE_AREA_AVERAGING);
         flappy = flappy.getScaledInstance(25, 25, Image.SCALE_AREA_AVERAGING);
         
         // We can also create our own BufferedImage and draw stuff in it the
@@ -53,10 +54,10 @@ public class ImageDemo extends JPanel {
         
         // An image can also be used as ImageIcon shown inside JLabel, JButton or similar.
         this.setLayout(new FlowLayout());
-        JButton button = new JButton(new ImageIcon(lilMandel));
+        JButton button = new JButton(new ImageIcon(lilcoffee));
         this.add(button);
         button.addActionListener(new ButtonListener());
-        this.setPreferredSize(new Dimension(mandel.getWidth(this) + 256, mandel.getHeight(this)));
+        this.setPreferredSize(new Dimension(coffee.getWidth(this) + 256, coffee.getHeight(this)));
     }
     
     private class ButtonListener implements ActionListener {
@@ -70,9 +71,9 @@ public class ImageDemo extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D)g;        
-        g2.drawImage(mandel, 0, 0, this);
-        g2.drawImage(bimg1, mandel.getWidth(this), 0, this);
-        g2.drawImage(bimg2, mandel.getWidth(this), 256, this);
+        g2.drawImage(coffee, 0, 0, this);
+        g2.drawImage(bimg1, coffee.getWidth(this), 0, this);
+        g2.drawImage(bimg2, coffee.getWidth(this), 256, this);
         for(int i = 0; i < 20; i++) {
             // With PNG images, the transparency information is stored alongside the colours.
             g2.drawImage(flappy, rng.nextInt(this.getWidth()), rng.nextInt(this.getHeight()), this);
