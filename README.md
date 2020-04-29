@@ -1,4 +1,4 @@
-# CCPS 209 Computer Science II
+# Computer Science II, Java version
 
 Course outline, lecture material and example code for *CCPS 209 Computer Science II*, as it was taught by [Ilkka Kokkarinen](http://scs.ryerson.ca/~ikokkari) for the Chang School of Continuing Education, Ryerson University, Toronto, Ontario. For the present implementation of this course, consult the instructor for the grading and other current policies. 
 
