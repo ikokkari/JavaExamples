@@ -170,7 +170,7 @@ public class Fraction implements Comparable<Fraction> {
      */
     public String toString() {
         if(den.equals(BigInteger.ONE)) { return num.toString(); }
-        else { return num + " / " + den; }
+        else { return num + "/" + den; }
     }
     
     // A private method for simplifying the initial value to lowest terms.
