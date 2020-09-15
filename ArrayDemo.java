@@ -18,7 +18,7 @@ public class ArrayDemo {
      * Demonstrate the basic operations of primitive arrays.
      * @param n The length of array to create for the demonstration.
      */
-    public void arrayFirstDemo(int n) {
+    public static void arrayFirstDemo(int n) {
         // To create an array, use new followed by element type and length.
         double[] a = new double[n];
         // Alternatively, if you know what the elements are, you can list them
@@ -53,7 +53,7 @@ public class ArrayDemo {
      * Demonstrate some other array utility methods in {@code java.util.Arrays}.
      * @param n The length of array to create for the demonstration.
      */
-    public void arraysMethods(int n) {
+    public static void arraysMethods(int n) {
         int[] a = new int[n];
         for(int i = 0; i < n; i++) {
             a[i] = rng.nextInt(1000);
@@ -81,7 +81,7 @@ public class ArrayDemo {
      * Strings are how arrays really should be in Java. In many languages they are.
      * This method demonstrates how in Java, they are not.
      */
-    public void stringVersusCharArray() {
+    public static void stringVersusCharArray() {
         String s = "Hello world";
         char[] a = s.toCharArray();
         // For Strings, length is method: for arrays, it is a field.
@@ -108,7 +108,7 @@ public class ArrayDemo {
      * though, as demonstrated by the code of this method.
      * @param n The length of array to create for the demonstration.
      */
-    public void arrayListDemo(int n) {
+    public static void arrayListDemo(int n) {
         // ArrayList is a generic class: you give it a type argument to tell what
         // kind of elements it stores. For builtin types such as int and double, you
         // must use the corresponding wrapper classes.
@@ -144,7 +144,7 @@ public class ArrayDemo {
      * Showcase the behaviour of two-dimensional arrays in Java.
      * @param n The length and width of the array to create for the demonstration.
      */
-    public void twoDArraysDemo(int n) {
+    public static void twoDArraysDemo(int n) {
         // A two-dimensional array is really a 1D array of 1D arrays. But you
         // will never go badly wrong if you think of it and use it as a 2D grid.
         char[][] a = new char[n][n];
