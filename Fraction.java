@@ -149,7 +149,7 @@ public class Fraction implements Comparable<Fraction> {
         int hn = num.hashCode();
         // As not to hash a/b and b/a to the same value, do some bitwise
         // arithmetic to one of their hash codes to break the symmetry.
-        hd = (hd >> 16) | (hd << 16);
+        hd = (hd >> 16) ^ ~(hd << 16);
         // Hash codes are often combined from pieces with bitwise arithmetic.
         return hn ^ hd; // ^ is bitwise xor, not exponentiation.
     }
