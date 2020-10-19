@@ -5,7 +5,7 @@ import javax.swing.border.*;
 
 public class Counter extends JPanel {
 
-    private static int count = 0;
+    private int count = 0;
     
     public Counter() {
         this.setPreferredSize(new Dimension(300, 80));
