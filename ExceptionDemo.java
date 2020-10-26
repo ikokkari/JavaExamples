@@ -1,9 +1,9 @@
-import java.io.*;
+import java.io.IOException;
 
 public class ExceptionDemo {
 
     // Fails and throws an IOException, which we must declare since it's checked
-    private void failOne() throws IOException {
+    private static void failOne() throws IOException {
         if(true) { // fool the compiler to think that the last line is reachable
             throw new IOException("testing");
         }
@@ -12,7 +12,7 @@ public class ExceptionDemo {
 
     // Calls failOne but does not handle the exception that it can throw.
     // Therefore this method must also declare that it may throw IOExceptions.
-    private void failTwo() throws IOException {
+    private static void failTwo() throws IOException {
         try {
             failOne(); // fails
             System.out.println("Execution does not get here.");
@@ -24,7 +24,7 @@ public class ExceptionDemo {
     
     // The test method catches and handles the exception that was thrown
     // from two levels below it in the method stack.
-    public void test() {
+    public static void test() {
         try {
             failTwo(); // fails by calling something that fails
         } catch(IOException e) {
