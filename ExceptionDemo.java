@@ -22,9 +22,9 @@ public class ExceptionDemo {
         }
     }
     
-    // The test method catches and handles the exception that was thrown
+    // The demo method catches and handles the exception that was thrown
     // from two levels below it in the method stack.
-    public static void test() {
+    public static void demo() {
         try {
             failTwo(); // fails by calling something that fails
         } catch(IOException e) {
@@ -39,6 +39,29 @@ public class ExceptionDemo {
         }
         finally {
             System.out.println("And we are finally done!");
+        }
+    }
+    
+    // Will this method return 0 or 1 when called? What do you think?
+    public static int returnDemo() {
+        try {
+            return 0;
+        }
+        finally {
+            return 1;
+        }
+    }
+    
+    // Does this method terminate, or is it an infinite loop? Who will win
+    // this game of tug-of-war between these two opposing forces?
+    public static void whileDemo() {
+        while(true) {
+            try {
+                break;
+            }
+            finally {
+                continue;
+            }
         }
     }
 }
