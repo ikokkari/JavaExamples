@@ -43,26 +43,32 @@ public class WordFrequency {
     
     // To make the later output nicely divided into lines of given length. 
     private static class LinePrinter {
-        private int line, lineLen;
-        private PrintWriter pw;
-        private boolean firstInLine = true;
-        public LinePrinter(PrintWriter pw, int line) {
-            this.pw = pw; this.line = line;
+        private int lineMax; // Maximum desired length of a line.
+        private int lineLen; // Length of the current line.
+        private PrintWriter out; // Where to direct the printed characters.
+        private boolean firstInLine = true; // Is the current word first in this line?
+        public LinePrinter(PrintWriter out, int lineMax) {
+            this.out = out;
+            this.lineMax = lineMax;
         }
         public void printWord(String word) {
-            if(lineLen + word.length() + (firstInLine? 0: 1) > line) {
-                lineLen = 0; pw.println(""); firstInLine = true;
+            if(lineLen + word.length() + (firstInLine? 0: 1) > lineMax) {
+                lineLen = 0;
+                out.println("");
+                firstInLine = true;
             }
-            if(!firstInLine) { pw.print(" "); lineLen++; }
-            pw.print(word);
+            if(!firstInLine) { out.print(" "); lineLen++; }
+            out.print(word);
             firstInLine = false;
             lineLen += word.length();
         }
         public void lineBreak() {
-            if(lineLen == 0) { return; }
-            pw.println("");
-            pw.flush();
-            lineLen = 0; firstInLine = true;
+            if(lineLen > 0) {
+                out.println("");
+                out.flush();
+                lineLen = 0;
+                firstInLine = true;
+            }
         }
     }
     

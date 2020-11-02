@@ -39,7 +39,9 @@ public class DissociatedPress {
             }
         }
         pattern += next;
-        if(pattern.length() > maxPat) { pattern = pattern.substring(1); }
+        if(pattern.length() > maxPat) {
+            pattern = pattern.substring(1);
+        }
     }
     
     /**
@@ -89,8 +91,8 @@ public class DissociatedPress {
     
     /**
      * For demonstration purposes, read in the text file "War and Peace" to be used to
-     * build up the followmap. Demonstrate the behaviour of the Dissociated Press technique
-     * to produce sample random test for possible pattern lengths from 1 to 6.
+     * build up the followmap. Demonstrate the behaviour of the Dissociated Press
+     * technique to produce sample random test for pattern lengths from 1 to 7.
      */
     public static void main(String[] args) throws IOException {
         Scanner wap = new Scanner(new File(FILENAME));
