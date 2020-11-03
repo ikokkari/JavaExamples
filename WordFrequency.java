@@ -33,6 +33,8 @@ public class WordFrequency {
             line = line.replaceAll("'ll\\b", " will");
             line = line.replaceAll("'t\\b", "");
             for(String word: line.split(wordSeparators)) {
+                // Lines that start with the quote character will end up having an
+                // empty word at the front of the split line array. Thus this check.
                 if(word.length() != 0) {
                     freqs.put(word, freqs.getOrDefault(word, 0) + 1);                
                 }
