@@ -26,7 +26,7 @@ public class Mandelbrot extends JPanel {
     // The frontier of the current active rendering.
     private volatile PriorityBlockingQueue<Pixel> activeFrontier = null;
     // The singleton poison pixel that orders its recipient to stop working.
-    private Pixel POISON = new Pixel(-1, -1);
+    private final Pixel POISON = new Pixel(-1, -1);
     // A global mutex for synchronization for image pixels.
     private Semaphore pixelMutex = new Semaphore(1);
     // The timestamp generator for task ID's.
@@ -91,7 +91,7 @@ public class Mandelbrot extends JPanel {
             BigComplex zp = z;
             for(int r = 0; r < rounds; r++) {
                 zp = zp.mul(zp).add(c); // z = z * z + c, original Mandelbrot formula
-                // zp = zp.mul(zp).mul(zp).add(c); // try also cubic Mandelbrot and other powers,
+                //zp = zp.mul(zp).mul(zp).add(c); // try also cubic Mandelbrot and other powers,
                 // as in the Wikipedia page https://en.wikipedia.org/wiki/Multibrot_set
                 iter++;
                 if(zp.getRe().abs().compareTo(THRES) > 0 || zp.getIm().abs().compareTo(THRES) > 0) {
@@ -109,7 +109,7 @@ public class Mandelbrot extends JPanel {
     // implement some step of an algorithm in a different way.
 
     private abstract class PixelComparator implements Comparator<Pixel> {
-        @Override public int compare(Pixel p1, Pixel p2) {
+        @Override final public int compare(Pixel p1, Pixel p2) {
             // Poison pixel is always the first in line.
             if(p1 == POISON) { return -1; }
             if(p2 == POISON) { return +1; }
@@ -118,7 +118,7 @@ public class Mandelbrot extends JPanel {
             if(p1.iter > p2.iter) { return +1; }
             // Otherwise defer the job to the template method step.
             int result = comparePixels(p1, p2);
-            // If the comparePixels cannot decide, we decide based on x + y of the pixel.
+            // If the comparePixels cannot decide, we decide based on (x + y) of the pixel.
             if(result == 0) {
                 result = (p1.x + p1.y) - (p2.x + p2.y);
             }
@@ -154,10 +154,12 @@ public class Mandelbrot extends JPanel {
             {0, 1}, {0, -1}, {1, 0}, {-1, 0} // main axes
         };
 
+    // A subclass to represent the task of rendering pixels from the given PriorityQueue.
+
     // Compute the image using current settings.
     public void computeImage(Comparator<Pixel> frontierComp) {
         int sc = bigScale(size);
-        BigComplex.mc = new MathContext(sc + 2); 
+        BigComplex.mc = new MathContext(sc + 5); 
         size = new BigDecimal(size.toString(), BigComplex.mc); // convert to higher precision
         top = new BigComplex( // convert to new math context
             new BigDecimal(top.getRe().toString(), BigComplex.mc),
@@ -178,7 +180,7 @@ public class Mandelbrot extends JPanel {
         }
 
         // Create a new frontier of pixels currently being processed. 
-        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(100, frontierComp);
+        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(1000, frontierComp);
         activeFrontier = frontier;
 
         // Complex coordinates of top left corner.
@@ -202,7 +204,6 @@ public class Mandelbrot extends JPanel {
             frontier.offer(new Pixel(x, sizeP - 1));
         }
 
-        // A subclass to represent the task of rendering pixels from the given PriorityQueue.
         class Renderer implements Callable<Integer> {
             // The blocking queue to take out pixels to be processed.
             private PriorityBlockingQueue<Pixel> localFrontier;
@@ -269,7 +270,7 @@ public class Mandelbrot extends JPanel {
                 }
                 return pixelCount;
             }
-        }
+        }        
 
         // Launch the renderer subtasks.
         for(int i = 0; i < THREADS; i++) {
@@ -302,7 +303,7 @@ public class Mandelbrot extends JPanel {
         this.size = size;
 
         // The search discipline in carving out the Mandelbrot turkey.
-        PixelComparator pixelComp = new DFSComparator();
+        PixelComparator pixelComp = new CenterDistanceComparator();
 
         // When the mouse is dragged, use the new coordinates as (bx, by).
         this.addMouseMotionListener(new MouseMotionAdapter() {
@@ -348,10 +349,8 @@ public class Mandelbrot extends JPanel {
             });
 
         computeImage(pixelComp); // Launch rendering the initial image.
-        this.timer = new javax.swing.Timer(TIMER_FREQ, (ae) -> {
-                repaint();
-            });
-        this.timer.start();
+        this.timer = new javax.swing.Timer(TIMER_FREQ, (ae) -> { repaint(); });
+        this.timer.start(); // Launch the animation refresh timer.
     }
 
     // To paint this component, just draw the image that we are rendering, 
@@ -374,12 +373,12 @@ public class Mandelbrot extends JPanel {
     // For demonstration purposes.
     public static void main(String[] args) {
         final JFrame f = new JFrame("Mandelbrot");
-        final Mandelbrot m = new Mandelbrot(1000);
+        final Mandelbrot mandel = new Mandelbrot(1000);
         f.setLayout(new FlowLayout());
-        f.add(m);
+        f.add(mandel);
         f.addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent we) {
-                    m.terminate();
+                    mandel.terminate();
                     f.dispose();
                     es.shutdownNow();
                 }
