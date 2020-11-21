@@ -27,11 +27,11 @@ public class BigComplex {
         return new BigComplex(this.re.add(other.re, mc), this.im.add(other.im, mc));
     }
     
-    public BigComplex sub(BigComplex other) {
+    public BigComplex subtract(BigComplex other) {
         return new BigComplex(this.re.subtract(other.re, mc), this.im.subtract(other.im, mc));
     }
     
-    public BigComplex mul(BigComplex other) {
+    public BigComplex multiply(BigComplex other) {
         BigDecimal r1 = this.re.multiply(other.re, mc);
         BigDecimal r2 = this.im.multiply(other.im, mc);
         BigDecimal i1 = this.im.multiply(other.re, mc);

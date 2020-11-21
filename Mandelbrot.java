@@ -34,9 +34,11 @@ public class Mandelbrot extends JPanel {
     // The timestamp generator for pixel ages.
     private static final AtomicInteger AGESTAMP = new AtomicInteger(0);
     // Threshold radius for escape for the Mandelbrow iteration.
-    private static final BigDecimal THRES = new BigDecimal("4");
+    private static final BigDecimal THRES = new BigDecimal("2");
+    // The maximum size of the pixel queue.
+    private static final int QUEUESIZE = 1000;
     // The number of threads to compute the image.
-    private static final int THREADS = 5;
+    private static final int THREADS = 4;
     // Multiplier for iteration steps performed for each pixel at each turn.
     private static final int IROUNDS = 50;
     // Pixel skip when initializing the start pixels of the image.
@@ -51,14 +53,16 @@ public class Mandelbrot extends JPanel {
 
     // Utility method to compute the pixel colour based on its escape count.
     private static int getEscapeColour(int c) {
-        // enforce symmetry to avoid ugly discontinuities
-        if((c / COLS) % 2 == 0) { c = c % COLS; } else { c = COLS - c % COLS - 1; }
-        // look up from cache if needed
+        // Enforce symmetry to avoid ugly discontinuities.
+        c = (c / COLS) % 2 == 0 ? c % COLS: COLS - c % COLS - 1;
+        // Look up the colour from cache if it is already computed.
         if(colours[c] == 0) {
-            double cc = Math.pow(c, .8);            
-            float hue = (float)(.5 + .3 * Math.sin(-.14*cc) + .2 * Math.sin(.07*cc + .1));            
-            float saturation = (float)(.7 + .2 * Math.sin(.13*cc+Math.cos(cc/100)));
-            float brightness = (float)(.6 + .3 * Math.sin(-.17*cc) + .1*Math.sin(.06*cc - .1));
+            double cc = Math.log(c + 1) / Math.log(0.4);
+            //double cc = Math.pow(c, .8);            
+            float hue = (float)(cc/10 - Math.floor(cc/10));
+            //float hue = (float)(.5 + .3 * Math.sin(-.07*cc) + .2 * Math.sin(.09*cc + .12));            
+            float saturation = (float)(.6 + .4 * Math.sin(.13*cc + Math.cos(cc * 0.01)));
+            float brightness = (float)(.6 + .3 * Math.sin(-.17*cc) + .1*Math.sin(.27*cc - .1));
             colours[c] = Color.HSBtoRGB(hue, saturation, brightness) & 0x00ffffff;            
         }
         return colours[c];
@@ -87,12 +91,15 @@ public class Mandelbrot extends JPanel {
         // Iterate this pixel some number of rounds. Returns -iter if pixel did not escape,
         // otherwise returns the escape count as positive number.
         public int iterate(int rounds) {
-            assert x > -1;
             BigComplex zp = z;
             for(int r = 0; r < rounds; r++) {
-                zp = zp.mul(zp).add(c); // z = z * z + c, original Mandelbrot formula
-                //zp = zp.mul(zp).mul(zp).add(c); // try also cubic Mandelbrot and other powers,
-                // as in the Wikipedia page https://en.wikipedia.org/wiki/Multibrot_set
+                // z = z * z + c, original Mandelbrot formula.
+                zp = zp.multiply(zp).add(c); 
+                
+                // You can also try cubic Mandelbrot and other powers, as seen in the
+                // Wikipedia page https://en.wikipedia.org/wiki/Multibrot_set
+                // zp = (zp.multiply(zp).multiply(zp).subtract(zp)).add(c);
+                
                 iter++;
                 if(zp.getRe().abs().compareTo(THRES) > 0 || zp.getIm().abs().compareTo(THRES) > 0) {
                     z = c = null;
@@ -149,6 +156,80 @@ public class Mandelbrot extends JPanel {
         }
     }
 
+    // A Callable task to perform rendering of pixels into the current image.
+
+    private class Renderer implements Callable<Integer> {
+        // The blocking queue to take out pixels to be processed.
+        private PriorityBlockingQueue<Pixel> localFrontier;
+        // The display into which to render the escaped pixels.
+        private BufferedImage localDisplay;
+        // The boolean array that keeps track of which pixels are active.
+        private boolean[][] localFound;
+        // The index of this rendering task.
+        private int idx;
+        // The count of how many pixels were processed.
+        private int pixelCount = 0;
+
+        public Renderer(PriorityBlockingQueue<Pixel> frontier, BufferedImage display,
+        boolean[][] localFound) {
+            this.idx = RENDERSTAMP.incrementAndGet();
+            this.localFrontier = frontier;
+            this.localDisplay = display;
+            this.localFound = localFound;
+        }
+
+        public Integer call() {
+            // In an infinite loop, repeatedly pop the next pixel from the queue
+            // of remaining pixels and iterate that pixel one more round. If it escapes,
+            // colour the pixel, otherwise push that pixel back to the queue. We must
+            // take care the synchronize the access to the priority queues of threads
+            // because PriorityQueue<T> itself, as most collections, is not thread safe.
+            try {
+                while(localFrontier.size() > 0) {
+                    Pixel p = localFrontier.take(); // The pixel to process next.
+                    if(p == POISON) {
+                        localFrontier.offer(POISON); // Put the poison back for the next guy.
+                        break; // And this task is done.
+                    }
+                    int c = p.iterate(IROUNDS);
+                    if(c > -1) { // The pixel has escaped!
+                        pixelCount++;
+                        pixelMutex.acquire();
+                        localDisplay.setRGB(p.x, p.y, getEscapeColour(c));
+                        // Add the undiscovered neighbours to the search frontier.
+                        for(int[] d: dirs) {
+                            int nx = p.x + d[0];
+                            int ny = p.y + d[1];
+                            if(nx >= 0 && nx < sizeP && ny >= 0 && ny < sizeP) {
+                                if(!localFound[nx][ny]) {
+                                    localFound[nx][ny] = true;
+                                    localFrontier.offer(new Pixel(nx, ny));
+                                }
+                            }
+                        }
+                        pixelMutex.release();
+                    }
+                    else { // The pixel p did not yet escape, so put it back.
+                        localFrontier.offer(p);
+                    }
+                }
+            } catch(Exception e) {
+                // Report the crash if it is some other than being interrupted.
+                if(!(e instanceof InterruptedException)) {
+                    System.out.println("Task " + idx + " crashed: " + e);
+                    System.out.println("Printing the stack trace: ");
+                    StackTraceElement[] trace = e.getStackTrace();
+                    for(int i = 0; i < trace.length; i++) {
+                        System.out.print(trace[i].getClassName() + " ");
+                        System.out.print(trace[i].getMethodName() + " ");
+                        System.out.println(trace[i].getLineNumber() + " ");
+                    }
+                }
+            }
+            return pixelCount;
+        }
+    }        
+
     // The neighbour direction offsets.
     private static final int[][] dirs = {
             {0, 1}, {0, -1}, {1, 0}, {-1, 0} // main axes
@@ -180,7 +261,7 @@ public class Mandelbrot extends JPanel {
         }
 
         // Create a new frontier of pixels currently being processed. 
-        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(1000, frontierComp);
+        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(QUEUESIZE, frontierComp);
         activeFrontier = frontier;
 
         // Complex coordinates of top left corner.
@@ -202,79 +283,11 @@ public class Mandelbrot extends JPanel {
             frontier.offer(new Pixel(x, 0));
             localFound[x][sizeP - 1] = true;
             frontier.offer(new Pixel(x, sizeP - 1));
-        }
+        }      
 
-        class Renderer implements Callable<Integer> {
-            // The blocking queue to take out pixels to be processed.
-            private PriorityBlockingQueue<Pixel> localFrontier;
-            // The display into which to render the escaped pixels.
-            private BufferedImage localDisplay;
-            // The index of this rendering task.
-            private int idx;
-            // The count of how many pixels were processed.
-            private int pixelCount = 0;
-
-            public Renderer(PriorityBlockingQueue<Pixel> frontier, BufferedImage display) {
-                this.idx = RENDERSTAMP.incrementAndGet();
-                this.localFrontier = frontier;
-                this.localDisplay = display;
-            }
-
-            public Integer call() {
-                // In an infinite loop, repeatedly pop the next pixel from the queue
-                // of remaining pixels and iterate that pixel one more round. If it escapes,
-                // colour the pixel, otherwise push that pixel back to the queue. We must
-                // take care the synchronize the access to the priority queues of threads
-                // because PriorityQueue<T> itself, as most collections, is not thread safe.
-                try {
-                    while(localFrontier.size() > 0) {
-                        Pixel p = localFrontier.take(); // The pixel to process next.
-                        if(p == POISON) {
-                            localFrontier.offer(POISON); // Put the poison back for the next guy.
-                            break; 
-                        }
-                        int c = p.iterate(sc * IROUNDS);
-                        if(c > -1) { // The pixel has escaped!
-                            pixelCount++;
-                            pixelMutex.acquire();
-                            localDisplay.setRGB(p.x, p.y, getEscapeColour(c));
-                            // Add the undiscovered neighbours to the search frontier.
-                            for(int[] d: dirs) {
-                                int nx = p.x + d[0];
-                                int ny = p.y + d[1];
-                                if(nx >= 0 && nx < sizeP && ny >= 0 && ny < sizeP) {
-                                    if(!localFound[nx][ny]) {
-                                        localFound[nx][ny] = true;
-                                        localFrontier.offer(new Pixel(nx, ny));
-                                    }
-                                }
-                            }
-                            pixelMutex.release();
-                        }
-                        else { // The pixel p did not yet escape, so put it back.
-                            localFrontier.offer(p);
-                        }
-                    }
-                } catch(Exception e) {
-                    // Report the crash if it is some other than being interrupted.
-                    if(!(e instanceof InterruptedException)) {
-                        System.out.println("Task " + idx + " crashed: " + e);
-                        System.out.println("Printing the stack trace: ");
-                        StackTraceElement[] trace = e.getStackTrace();
-                        for(int i = 0; i < trace.length; i++) {
-                            System.out.print(trace[i].getClassName() + " ");
-                            System.out.print(trace[i].getMethodName() + " ");
-                            System.out.println(trace[i].getLineNumber() + " ");
-                        }
-                    }
-                }
-                return pixelCount;
-            }
-        }        
-
-        // Launch the renderer subtasks.
+        // Launch the renderer tasks.
         for(int i = 0; i < THREADS; i++) {
-            es.submit(new Renderer(frontier, localDisplay));
+            es.submit(new Renderer(frontier, localDisplay, localFound));
         }
     }
 
@@ -308,7 +321,6 @@ public class Mandelbrot extends JPanel {
         // When the mouse is dragged, use the new coordinates as (bx, by).
         this.addMouseMotionListener(new MouseMotionAdapter() {
                 public void mouseDragged(MouseEvent me) {
-                    //if(busy) { return; }
                     bx = me.getX();
                     by = me.getY();
                     if(by < 0) { return; }
