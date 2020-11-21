@@ -57,12 +57,11 @@ public class Mandelbrot extends JPanel {
         c = (c / COLS) % 2 == 0 ? c % COLS: COLS - c % COLS - 1;
         // Look up the colour from cache if it is already computed.
         if(colours[c] == 0) {
-            double cc = Math.log(c + 1) / Math.log(0.4);
-            //double cc = Math.pow(c, .8);            
-            float hue = (float)(cc/10 - Math.floor(cc/10));
-            //float hue = (float)(.5 + .3 * Math.sin(-.07*cc) + .2 * Math.sin(.09*cc + .12));            
-            float saturation = (float)(.6 + .4 * Math.sin(.13*cc + Math.cos(cc * 0.01)));
-            float brightness = (float)(.6 + .3 * Math.sin(-.17*cc) + .1*Math.sin(.27*cc - .1));
+            
+            double cc = Math.pow(c, .8);            
+            float hue = (float)(cc/50 - Math.floor(cc/50));            
+            float saturation = (float)(.6 + .4 * Math.sin(.53*cc + Math.cos(cc * 0.16)));
+            float brightness = (float)(.6 + .3 * Math.sin(-.47*cc) + .1*Math.sin(.27*cc - .1));
             colours[c] = Color.HSBtoRGB(hue, saturation, brightness) & 0x00ffffff;            
         }
         return colours[c];
@@ -98,7 +97,7 @@ public class Mandelbrot extends JPanel {
                 
                 // You can also try cubic Mandelbrot and other powers, as seen in the
                 // Wikipedia page https://en.wikipedia.org/wiki/Multibrot_set
-                // zp = (zp.multiply(zp).multiply(zp).subtract(zp)).add(c);
+                //zp = (zp.multiply(zp).multiply(zp).subtract(zp)).add(c);
                 
                 iter++;
                 if(zp.getRe().abs().compareTo(THRES) > 0 || zp.getIm().abs().compareTo(THRES) > 0) {
@@ -316,7 +315,7 @@ public class Mandelbrot extends JPanel {
         this.size = size;
 
         // The search discipline in carving out the Mandelbrot turkey.
-        PixelComparator pixelComp = new CenterDistanceComparator();
+        PixelComparator pixelComp = new DFSComparator();
 
         // When the mouse is dragged, use the new coordinates as (bx, by).
         this.addMouseMotionListener(new MouseMotionAdapter() {
