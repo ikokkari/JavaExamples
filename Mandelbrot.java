@@ -41,6 +41,8 @@ public class Mandelbrot extends JPanel {
     private static final int IROUNDS = 200;
     // Pixel skip when initializing the start pixels of the image.
     private static final int EDGE_SKIP = 20;
+    // Change this value for interesting DFS effects. Must be a positive integer.
+    private static final int BUNCH = 100;
     // The ExecutorService to manage the threads behind the scenes.
     private static ExecutorService es = Executors.newFixedThreadPool(THREADS);
     // How often the screen image should be updated, delay in ms.
@@ -49,7 +51,7 @@ public class Mandelbrot extends JPanel {
     private static final int COLS = 1024;
     private static int[] colours = new int[COLS];
     // The neighbour directions from the current pixel.
-    private static final int[][] dirs = { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
+    private static final int[][] DIRS = { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
 
     // Utility method to compute the pixel colour based on its escape count.
     private static int getEscapeColour(int c) {
@@ -192,7 +194,8 @@ public class Mandelbrot extends JPanel {
                         pixelMutex.acquire();
                         localDisplay.setRGB(p.x, p.y, getEscapeColour(c));
                         // Add the undiscovered neighbours to the search frontier.
-                        for(int[] d: dirs) {
+                        for(int i = 0; i < 4; i++) {
+                            int[] d = DIRS[(i + p.age / BUNCH) % 4];
                             int nx = p.x + d[0];
                             int ny = p.y + d[1];
                             if(nx >= 0 && nx < sizeP && ny >= 0 && ny < sizeP) {
