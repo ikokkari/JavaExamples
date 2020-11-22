@@ -34,13 +34,11 @@ public class Mandelbrot extends JPanel {
     // The timestamp generator for pixel ages.
     private static final AtomicInteger AGESTAMP = new AtomicInteger(0);
     // Threshold radius for escape for the Mandelbrow iteration.
-    private static final BigDecimal THRES = new BigDecimal("2");
-    // The maximum size of the pixel queue.
-    private static final int QUEUESIZE = 1000;
+    private static final BigDecimal THRESHOLD = new BigDecimal("4.0");
     // The number of threads to compute the image.
     private static final int THREADS = 4;
     // Multiplier for iteration steps performed for each pixel at each turn.
-    private static final int IROUNDS = 50;
+    private static final int IROUNDS = 200;
     // Pixel skip when initializing the start pixels of the image.
     private static final int EDGE_SKIP = 20;
     // The ExecutorService to manage the threads behind the scenes.
@@ -50,6 +48,8 @@ public class Mandelbrot extends JPanel {
     // The colours used to render completed pixels.
     private static final int COLS = 1024;
     private static int[] colours = new int[COLS];
+    // The neighbour directions from the current pixel.
+    private static final int[][] dirs = { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
 
     // Utility method to compute the pixel colour based on its escape count.
     private static int getEscapeColour(int c) {
@@ -100,8 +100,11 @@ public class Mandelbrot extends JPanel {
                 //zp = (zp.multiply(zp).multiply(zp).subtract(zp)).add(c);
                 
                 iter++;
-                if(zp.getRe().abs().compareTo(THRES) > 0 || zp.getIm().abs().compareTo(THRES) > 0) {
-                    z = c = null;
+                BigDecimal real = zp.getRe();
+                BigDecimal imag = zp.getIm();
+                BigDecimal d = real.multiply(real).add(imag.multiply(imag));
+                if(d.compareTo(THRESHOLD) > 0) {
+                    z = c = null; // Allow garbage collection release those.
                     return iter; // Iteration of this pixel completed.
                 }
             }
@@ -124,9 +127,11 @@ public class Mandelbrot extends JPanel {
             if(p1.iter > p2.iter) { return +1; }
             // Otherwise defer the job to the template method step.
             int result = comparePixels(p1, p2);
-            // If the comparePixels cannot decide, we decide based on (x + y) of the pixel.
+            // If the comparePixels cannot decide, we decide based distance from center.
             if(result == 0) {
-                result = (p1.x + p1.y) - (p2.x + p2.y);
+                int d1 = Math.max(Math.abs(sizeP / 2 - p1.x), Math.abs(sizeP / 2 - p1.y));
+                int d2 = Math.max(Math.abs(sizeP / 2 - p2.x), Math.abs(sizeP / 2 - p2.y));
+                return d1 < d2 ? -1 : +1;
             }
             return result;
         }
@@ -143,15 +148,6 @@ public class Mandelbrot extends JPanel {
     private class BFSComparator extends PixelComparator {
         @Override public int comparePixels(Pixel p1, Pixel p2) {
             return p1.age - p2.age; // BFS ordering of pixel ages
-        }
-    }
-
-    private class CenterDistanceComparator extends PixelComparator {
-        @Override public int comparePixels(Pixel p1, Pixel p2) {
-            // resolve equals by their chessboard distance to image center
-            int d1 = Math.max(Math.abs(sizeP / 2 - p1.x), Math.abs(sizeP / 2 - p1.y));
-            int d2 = Math.max(Math.abs(sizeP / 2 - p2.x), Math.abs(sizeP / 2 - p2.y));
-            return d1 < d2 ? -1 : +1;
         }
     }
 
@@ -227,12 +223,7 @@ public class Mandelbrot extends JPanel {
             }
             return pixelCount;
         }
-    }        
-
-    // The neighbour direction offsets.
-    private static final int[][] dirs = {
-            {0, 1}, {0, -1}, {1, 0}, {-1, 0} // main axes
-        };
+    }
 
     // A subclass to represent the task of rendering pixels from the given PriorityQueue.
 
@@ -260,7 +251,7 @@ public class Mandelbrot extends JPanel {
         }
 
         // Create a new frontier of pixels currently being processed. 
-        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(QUEUESIZE, frontierComp);
+        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(100, frontierComp);
         activeFrontier = frontier;
 
         // Complex coordinates of top left corner.
@@ -383,7 +374,7 @@ public class Mandelbrot extends JPanel {
 
     // For demonstration purposes.
     public static void main(String[] args) {
-        final JFrame f = new JFrame("Mandelbrot");
+        final JFrame f = new JFrame("Mandelbrot Carver");
         final Mandelbrot mandel = new Mandelbrot(1000);
         f.setLayout(new FlowLayout());
         f.add(mandel);
