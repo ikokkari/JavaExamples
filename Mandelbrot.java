@@ -9,6 +9,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 public class Mandelbrot extends JPanel {
+    // The number of threads used to compute the image.
+    private static final int THREADS = 4;
     // The size of this component in pixels.
     private int sizeP;
     // The complex number at the top left corner of image.
@@ -35,12 +37,10 @@ public class Mandelbrot extends JPanel {
     private static final AtomicInteger AGESTAMP = new AtomicInteger(0);
     // Threshold radius for escape for the Mandelbrow iteration.
     private static final BigDecimal THRESHOLD = new BigDecimal("4.0");
-    // The number of threads to compute the image.
-    private static final int THREADS = 4;
     // Multiplier for iteration steps performed for each pixel at each turn.
-    private static final int IROUNDS = 200;
+    private static final int IROUNDS = 300;
     // Pixel skip when initializing the start pixels of the image.
-    private static final int EDGE_SKIP = 20;
+    private static final int EDGE_SKIP = 200;
     // Change this value for interesting DFS effects. Must be a positive integer.
     private static final int BUNCH = 100;
     // The ExecutorService to manage the threads behind the scenes.
@@ -59,7 +59,6 @@ public class Mandelbrot extends JPanel {
         c = (c / COLS) % 2 == 0 ? c % COLS: COLS - c % COLS - 1;
         // Look up the colour from cache if it is already computed.
         if(colours[c] == 0) {
-            
             double cc = Math.pow(c, .8);            
             float hue = (float)(cc/50 - Math.floor(cc/50));            
             float saturation = (float)(.6 + .4 * Math.sin(.53*cc + Math.cos(cc * 0.16)));
@@ -82,7 +81,7 @@ public class Mandelbrot extends JPanel {
             this.y = y;
             this.age = AGESTAMP.incrementAndGet();
             // Compute the complex number that this pixel represents.
-            if(x > -1) { // None for POISON, though.
+            if(this.x > -1) { // None for POISON, though.
                 BigDecimal cx = top.getRe().add(psize.multiply(new BigDecimal(x)));
                 BigDecimal cy = top.getIm().subtract(psize.multiply(new BigDecimal(y)));
                 this.z = this.c = new BigComplex(cx, cy);
@@ -128,14 +127,7 @@ public class Mandelbrot extends JPanel {
             if(p1.iter < p2.iter) { return -1; }
             if(p1.iter > p2.iter) { return +1; }
             // Otherwise defer the job to the template method step.
-            int result = comparePixels(p1, p2);
-            // If the comparePixels cannot decide, we decide based distance from center.
-            if(result == 0) {
-                int d1 = Math.max(Math.abs(sizeP / 2 - p1.x), Math.abs(sizeP / 2 - p1.y));
-                int d2 = Math.max(Math.abs(sizeP / 2 - p2.x), Math.abs(sizeP / 2 - p2.y));
-                return d1 < d2 ? -1 : +1;
-            }
-            return result;
+            return comparePixels(p1, p2);
         }
         // Template method pattern: subclasses must implent this comparison method.
         protected abstract int comparePixels(Pixel p1, Pixel p2);
@@ -153,26 +145,35 @@ public class Mandelbrot extends JPanel {
         }
     }
 
+    // Objects of this class represent the context in which Mandelbrot rendering takes place.
+    private class RenderingContext {
+       // The priority queue that stores the frontier of active pixels.
+       public PriorityBlockingQueue<Pixel> localFrontier;
+       // The display into which the escaped pixels are rendered.
+       public BufferedImage localDisplay;
+       // The boolean array that keeps track of which pixels are active.
+       public boolean[][] localFound;
+       // Constructor to initialize the fields.
+       public RenderingContext(PriorityBlockingQueue<Pixel> frontier, BufferedImage display,
+       boolean[][] found) {
+           this.localFrontier = frontier;
+           this.localDisplay = display;
+           this.localFound = found;
+       }
+    }
+    
     // A Callable task to perform rendering of pixels into the current image.
 
     private class Renderer implements Callable<Integer> {
-        // The blocking queue to take out pixels to be processed.
-        private PriorityBlockingQueue<Pixel> localFrontier;
-        // The display into which to render the escaped pixels.
-        private BufferedImage localDisplay;
-        // The boolean array that keeps track of which pixels are active.
-        private boolean[][] localFound;
+        // The context in which this rendering happens.
+        private RenderingContext context;
         // The index of this rendering task.
         private int idx;
         // The count of how many pixels were processed.
         private int pixelCount = 0;
 
-        public Renderer(PriorityBlockingQueue<Pixel> frontier, BufferedImage display,
-        boolean[][] localFound) {
-            this.idx = RENDERSTAMP.incrementAndGet();
-            this.localFrontier = frontier;
-            this.localDisplay = display;
-            this.localFound = localFound;
+        public Renderer(RenderingContext context) {
+            this.context = context;
         }
 
         public Integer call() {
@@ -181,34 +182,36 @@ public class Mandelbrot extends JPanel {
             // colour the pixel, otherwise push that pixel back to the queue. We must
             // take care the synchronize the access to the priority queues of threads
             // because PriorityQueue<T> itself, as most collections, is not thread safe.
+            
             try {
-                while(localFrontier.size() > 0) {
-                    Pixel p = localFrontier.take(); // The pixel to process next.
+                while(context.localFrontier.size() > 0) {
+                    Pixel p = context.localFrontier.take(); // The pixel to process next.
                     if(p == POISON) {
-                        localFrontier.offer(POISON); // Put the poison back for the next guy.
+                        // Put the poison back for the next guy.
+                        context.localFrontier.offer(POISON); 
                         break; // And this task is done.
                     }
                     int c = p.iterate(IROUNDS);
                     if(c > -1) { // The pixel has escaped!
                         pixelCount++;
                         pixelMutex.acquire();
-                        localDisplay.setRGB(p.x, p.y, getEscapeColour(c));
+                        context.localDisplay.setRGB(p.x, p.y, getEscapeColour(c));
                         // Add the undiscovered neighbours to the search frontier.
                         for(int i = 0; i < 4; i++) {
                             int[] d = DIRS[(i + p.age / BUNCH) % 4];
                             int nx = p.x + d[0];
                             int ny = p.y + d[1];
                             if(nx >= 0 && nx < sizeP && ny >= 0 && ny < sizeP) {
-                                if(!localFound[nx][ny]) {
-                                    localFound[nx][ny] = true;
-                                    localFrontier.offer(new Pixel(nx, ny));
+                                if(!context.localFound[nx][ny]) {
+                                    context.localFound[nx][ny] = true;
+                                    context.localFrontier.offer(new Pixel(nx, ny));
                                 }
                             }
                         }
                         pixelMutex.release();
                     }
                     else { // The pixel p did not yet escape, so put it back.
-                        localFrontier.offer(p);
+                        context.localFrontier.offer(p);
                     }
                 }
             } catch(Exception e) {
@@ -254,8 +257,8 @@ public class Mandelbrot extends JPanel {
         }
 
         // Create a new frontier of pixels currently being processed. 
-        PriorityBlockingQueue<Pixel> frontier = new PriorityBlockingQueue<>(100, frontierComp);
-        activeFrontier = frontier;
+        PriorityBlockingQueue<Pixel> localFrontier = new PriorityBlockingQueue<>(100, frontierComp);
+        activeFrontier = localFrontier;
 
         // Complex coordinates of top left corner.
         final BigDecimal topX = top.getRe();
@@ -266,21 +269,22 @@ public class Mandelbrot extends JPanel {
         // Initialize the search frontiers for each edge.
         for(int y = 0; y < sizeP; y += EDGE_SKIP) {
             localFound[0][y] = true;
-            frontier.offer(new Pixel(0, y));
+            localFrontier.offer(new Pixel(0, y));
             localFound[sizeP - 1][y] = true;
-            frontier.offer(new Pixel(sizeP - 1, y));
+            localFrontier.offer(new Pixel(sizeP - 1, y));
         }
 
         for(int x = 0; x < sizeP; x += EDGE_SKIP) {
             localFound[x][0] = true;
-            frontier.offer(new Pixel(x, 0));
+            localFrontier.offer(new Pixel(x, 0));
             localFound[x][sizeP - 1] = true;
-            frontier.offer(new Pixel(x, sizeP - 1));
+            localFrontier.offer(new Pixel(x, sizeP - 1));
         }      
 
+        RenderingContext context = new RenderingContext(localFrontier, localDisplay, localFound);
         // Launch the renderer tasks.
         for(int i = 0; i < THREADS; i++) {
-            es.submit(new Renderer(frontier, localDisplay, localFound));
+            es.submit(new Renderer(context));
         }
     }
 

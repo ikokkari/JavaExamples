@@ -77,7 +77,11 @@ public class Sliders extends JPanel {
                 this.color = new Color(Color.HSBtoRGB(hue, saturation, brightness));
             }
             else { this.color = Color.BLACK; }
-            // The execution thread for this slider.
+            
+            // Normally, having a separate thread for each animated object would be
+            // overkill, and one thread would handle all objects. However, since this
+            // is intended to be an example of thread handling and deadlock avoidance,
+            // we now create and manage all these execution threads explicitly.
             this.thread = new Thread(() -> { // Runnable object as a lambda.
                 try {
                     while(running) {
