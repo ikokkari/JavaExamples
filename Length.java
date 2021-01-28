@@ -4,6 +4,12 @@
  * (It is still the same physical quantity, even if the units that we use to
  * talk about it are different.)
  * 
+ * "All services offered by a module should be available through a uniform
+ * notation, which does not betray whether they are implemented through storage
+ * or through computation." -- Bertrand Meyer
+ * 
+ * https://martinfowler.com/bliki/UniformAccessPrinciple.html
+ * 
  * @author Ilkka Kokkarinen
 */
 public class Length {
@@ -84,7 +90,10 @@ public class Length {
         System.out.println(a); // A length of 20 cm.
         System.out.println(a.getCentimeters()); // 20
         System.out.println(a.getInches()); // 7.874015748031496
-        // See the DataDemo example next week to find out how to print decimal
-        // numbers up to some more reasonable precision.
+        a.setInches(20);
+        System.out.println(a.getCentimeters()); // 50.8
+        System.out.println(a.getInches()); // 20.0
+        // See the DataDemo example to find out how to print decimal numbers up
+        // to some more reasonable precision.
     }
 }
