@@ -4,24 +4,24 @@
 
 public class ParameterDemo {
     
-    private void fooPrimitive(int x) {
+    private static void fooPrimitive(int x) {
         x++;
         System.out.println("Inside method foo, x is now " + x + "."); // 2
     }
     
-    public void demoPrimitive() {
+    public static void demoPrimitive() {
         int a = 5;
         System.out.println("To start, a is " + a + "."); // 1
         fooPrimitive(a);
         System.out.println("After call, a is " + a + "."); // 3
     }
     
-    private void fooArray(int[] x) {
+    private static void fooArray(int[] x) {
         x[42]++;
         System.out.println("Inside method foo, x[42] is now " + x[42] + ".");
     }
     
-    public void demoArray() {
+    public static void demoArray() {
         int[] a = new int[100];
         a[42] = 5;
         System.out.println("To start, a[42] is " + a[42] + "."); // 1
