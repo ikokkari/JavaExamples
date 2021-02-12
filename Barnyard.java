@@ -93,35 +93,35 @@ public class Barnyard {
     }
     
     // A decorator subclass of Animal. Every decorator object contains a private
-    // reference to the underlying object, and overrides its methods to call the
-    // methods of the underlying object.
+    // reference to the underlying client object, and defines all its methods to
+    // first consult the client and then modify the answer returned.
     
     public static class LoudAnimal extends Animal {
-        private Animal animal;
-        public LoudAnimal(Animal animal) {
-            this.animal = animal;
-            System.out.println("Constructor of LoudAnimal with " + animal);
+        private Animal client;
+        public LoudAnimal(Animal client) {
+            this.client = client;
+            System.out.println("Constructor of LoudAnimal with " + client);
         }
         @Override public String getSound() { 
-            return animal.getSound().toUpperCase();
+            return client.getSound().toUpperCase();
         }
         @Override public String getSpecies() {
-            return "loud " + animal.getSpecies();
+            return "loud " + client.getSpecies();
         }
     }
     
     // Another decorator subclass with the same idea.
     public static class MirroredAnimal extends Animal {
-        private Animal animal;
-        public MirroredAnimal(Animal animal) {
-            this.animal = animal;
-            System.out.println("Constructor of MirroredAnimal with " + animal);
+        private Animal client;
+        public MirroredAnimal(Animal client) {
+            this.client = client;
+            System.out.println("Constructor of MirroredAnimal with " + client);
         }
         @Override public String getSound() { 
-            return new StringBuilder(animal.getSound()).reverse().toString();
+            return new StringBuilder(client.getSound()).reverse().toString();
         }
         @Override public String getSpecies() {
-            return "mirrored " + animal.getSpecies();
+            return "mirrored " + client.getSpecies();
         }
     }
     
