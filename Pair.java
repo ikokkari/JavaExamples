@@ -1,3 +1,7 @@
+import java.io.*;
+import java.util.Scanner;
+import java.util.HashSet;
+
 // An immensely useful class that for some reason is missing from
 // the Java standard library. (Google "why java has no pair class")
 
@@ -38,20 +42,31 @@ public class Pair<T, U> {
     
     @Override public int hashCode() {
         // When creating hash functions, bit shifts and xor are your helpful friends.
+        // Hash code of object is computed based on precisely those fields that can
+        // affect the equality comparison of those objects inside the equals method.
         int f1 = getFirst().hashCode();
         int f2 = getSecond().hashCode();
-        f1 = (f1 >> 16) | (f1 << 16);
-        return f1 ^ f2; // Not exponentiation, but bitwise xor
+        // Swap top and bottom nybbles so that pairs (a, b) and (b, a) hash differently.
+        f1 = (f1 >> 16) | (f1 << 16); 
+        // Operator ^ is the bitwise exclusive or.
+        int result = (f1 ^ f2);
+        // Last, use bitwise and to ensure that the highest (sign) bit is zero.
+        return result & 0x7fffffff;  
     }
     
-    public static void sampleHashCodes() {
-        java.util.HashSet<Integer> seen = new java.util.HashSet<>();
-        java.util.Random rng = new java.util.Random(12345);
-        for(int i = 0; i < 100000; i++) {
-            int a = rng.nextInt();
-            int b = rng.nextInt();
-            seen.add(new Pair<Integer, Integer>(a, b).hashCode());            
+    // Read the words from War and Peace and count how many different hash codes we
+    // get for the (word, idx) pairs generated from that data.
+    public static void sampleHashCodes() throws IOException {
+        HashSet<Integer> seen = new HashSet<>();
+        int wordNo = 0;
+        try(Scanner sc = new Scanner(new File("warandpeace.txt"))) {        
+            while(sc.hasNextLine()) {
+                for(String word: sc.nextLine().split(" ")) {
+                    Pair<String, Integer> p = new Pair<>(word, wordNo++);
+                    seen.add(p.hashCode());
+                }
+            }
         }
-        System.out.println("Seen " + seen.size() + " hash codes.");
+        System.out.println("We got " + seen.size() + " different hash codes for " + wordNo + " words.");
     }
 }
