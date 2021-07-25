@@ -8,8 +8,10 @@ public class FJMergeSort extends RecursiveAction {
 
     private static final int PARCUTOFF = 300; // adjust to taste
     private static final int MSCUTOFF = 50;
-    private int low, high;
-    private int[] a, b;
+    private final int low;
+    private final int high;
+    private final int[] a;
+    private final int[] b;
     
     // Sort the subarray (low..high) of array a, using another array
     // b of the same length as the temporary workspace.

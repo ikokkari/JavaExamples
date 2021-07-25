@@ -8,8 +8,8 @@ import java.text.*; // for DecimalFormat
 
 public class ArrayDemo {
 
-    private static Random rng = new Random();
-    private static DecimalFormat format = new DecimalFormat();
+    private static final Random rng = new Random();
+    private static final DecimalFormat format = new DecimalFormat();
     static {
         format.setMaximumFractionDigits(4);
     }
@@ -130,7 +130,7 @@ public class ArrayDemo {
         // The for-each loop also works for all Collection classes.
         int sum2 = 0;
         for(int e: a1) { sum2 += e; }
-        System.out.println("Element sum equals " + sum);
+        System.out.println("Element sum equals " + sum + " or " + sum2);
         // Assigment of elements is done with the method set.
         a1.set(3, -999);
         System.out.println(a1);

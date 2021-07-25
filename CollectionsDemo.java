@@ -3,11 +3,11 @@ import java.math.*; // for BigInteger
 
 public class CollectionsDemo {
     
-    private static Random rng = new Random();
+    private static final Random rng = new Random();
     
     @SuppressWarnings("unchecked")
     public static void basicOperations() {
-        TreeSet<Integer> tsd = new TreeSet<Integer>();
+        TreeSet<Integer> tsd = new TreeSet<>();
         
         // First, the dynamic set operations add, remove and contains.
         tsd.add(42); tsd.add(99); tsd.add(99);
@@ -25,11 +25,11 @@ public class CollectionsDemo {
         }
         
         // Two collections are equal if they are of same general type with equal elements.
-        TreeSet<Integer> tsd2 = new TreeSet<Integer>();
+        TreeSet<Integer> tsd2 = new TreeSet<>();
         tsd2.add(99);
-        HashSet<Integer> hs = new HashSet<Integer>();
+        HashSet<Integer> hs = new HashSet<>();
         hs.add(99);
-        ArrayList<Integer> al = new ArrayList<Integer>();
+        ArrayList<Integer> al = new ArrayList<>();
         al.add(99);
         System.out.println("tsd equals tsd2: " + tsd.equals(tsd2)); // true
         System.out.println("tsd equals hs: " + tsd.equals(hs)); // true, hs is a Set
@@ -110,10 +110,10 @@ public class CollectionsDemo {
     // Since the Iterator<E> interface is so simple, it is also simple to decorate:
     
     public static class DuplicatingIterator<E> implements Iterator<E> {
-        private int dup; // how many times each value should be duplicated
+        private final int dup; // how many times each value should be duplicated
         private int count; // how many times current value has been duplicated
         private E value = null; // the current value that is being duplicated
-        private Iterator<E> client;
+        private final Iterator<E> client;
         public DuplicatingIterator(Iterator<E> client, int dup) {
             this.client = client;
             this.dup = this.count = dup;
@@ -141,7 +141,7 @@ public class CollectionsDemo {
     }
     
     public static void FibonacciDemo() {
-        Iterator<BigInteger> it = new DuplicatingIterator<BigInteger>(new FibonacciIterator(), 3);
+        Iterator<BigInteger> it = new DuplicatingIterator<>(new FibonacciIterator(), 3);
         for(int i = 0; i < 50; i++) {
             System.out.println(it.next());
         }
@@ -159,9 +159,7 @@ public class CollectionsDemo {
             if(a % 2 != 0 && b % 2 == 0) { return -1; }
             if(a % 2 == 0 && b % 2 != 0) { return +1; }
             // Otherwise compare normally.
-            if(a < b) { return -1; }
-            if(a > b) { return +1; }
-            return 0;
+            return a.compareTo(b);
         }
     }
 
@@ -177,7 +175,7 @@ public class CollectionsDemo {
     // Counting comparator might be handy in measuring various sorting algorithms.
     
     private static class CountingComparator<T> implements Comparator<T> {
-        private Comparator<T> client;
+        private final Comparator<T> client;
         private int count = 0;
         public CountingComparator(Comparator<T> client) {
             this.client = client;
@@ -194,7 +192,7 @@ public class CollectionsDemo {
     }
     
     public static void demonstrateComparators() {
-        ArrayList<Integer> ai = new ArrayList<Integer>();
+        ArrayList<Integer> ai = new ArrayList<>();
         for(int i = 0; i < 10; i++) { ai.add(rng.nextInt(1000)); }
         System.out.println("Initial arraylist:");
         System.out.println(ai);
@@ -204,14 +202,14 @@ public class CollectionsDemo {
         System.out.println("Largest element is " + Collections.max(ai) + ".");
         
         System.out.println("Sorted with a counting oddeven Comparator:");
-        CountingComparator<Integer> comp = new CountingComparator<Integer>(new OddEvenComparator());
-        Collections.sort(ai, comp);
+        CountingComparator<Integer> comp = new CountingComparator<>(new OddEvenComparator());
+        ai.sort(comp);
         System.out.println(ai);
         System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
         
         System.out.println("Sorted with a counting lexicographic Comparator:");
-        comp = new CountingComparator<Integer>(new LexicalComparator());
-        Collections.sort(ai, comp);
+        comp = new CountingComparator<>(new LexicalComparator());
+        ai.sort(comp);
         System.out.println(ai);
         System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
     }

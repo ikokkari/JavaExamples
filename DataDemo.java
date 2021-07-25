@@ -8,10 +8,11 @@ import java.math.*;
  * else that is useful.
  * @author Ilkka Kokkarinen
  */
+
 public class DataDemo {
 
     // A utility class used to format decimal numbers for console output purposes.
-    private static DecimalFormat df = new DecimalFormat();
+    private static final DecimalFormat df = new DecimalFormat();
     // A block of code executed when JVM loads the class bytecode. Handy to
     // initialize static members of the class, as if this were the "constructor"
     // for the class as a whole, in a sense.
@@ -258,7 +259,7 @@ public class DataDemo {
         double b = 123.456789;
         double c = -987.654321;
         String s = "Hello world!";
-        System.out.printf("C-style printf demo begins:\n");
+        System.out.print("C-style printf demo begins:\n");
         System.out.printf("Now a equals %d, which is 0x%x in hexadecimal and %o in octal.\n", a, a, a);
         System.out.printf("With two decimals, b equals %.2f and c equals %.2f.\n", b, c);
         System.out.printf("With six decimals, b equals %.6f and c equals %.6f.\n", b, c);
@@ -266,7 +267,7 @@ public class DataDemo {
         System.out.printf("String s equals '%s'\n", s);
         System.out.printf("Padding from left, that is '%20s'\n", s);
         System.out.printf("Padding from right, that is '%-20s'\n", s);
-        System.out.printf("C-style printf demo ends.\n"); 
+        System.out.print("C-style printf demo ends.\n");
     }
     
     /**

@@ -9,7 +9,8 @@ public class BigComplex {
     public static final BigComplex I = new BigComplex(0, 1);
     
     // A complex number consists of real and imaginary parts.
-    private BigDecimal re, im;
+    private final BigDecimal re;
+    private final BigDecimal im;
     
     public BigComplex(double re, double im) {
         this.re = new BigDecimal(re, mc);

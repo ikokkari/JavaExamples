@@ -133,7 +133,8 @@ public class FloydSteinberg {
      * A utility method to create a {@code JPanel} instance customized to render the
      * dithered version of the given {@code BufferedImage}.
      * @param img The image to dither and display.
-     * @level levels The number of levels of gray to use in dithering.
+     * @param palette The palette of colours to used in dithering.
+     * @param toolTip The tooltip displayed on this component.
      */
     public static JPanel createPanel(final BufferedImage img, Color[] palette, final String toolTip) {
         final BufferedImage result = dither(img, palette);
@@ -147,8 +148,7 @@ public class FloydSteinberg {
                 g.drawImage(result, 0, 0, this);
             }
         }
-        JPanel panel = new FSPanel();
-        return panel;
+        return new FSPanel();
     }
     
     public static void main(String[] args) {
@@ -156,7 +156,7 @@ public class FloydSteinberg {
         coffee = coffee.getScaledInstance(400, 250, Image.SCALE_SMOOTH);
         MediaTracker m = new MediaTracker(new JPanel());
         m.addImage(coffee, 0);
-        try { m.waitForAll(); } catch(InterruptedException e) { }
+        try { m.waitForAll(); } catch(InterruptedException ignored) { }
         
         // The trivial way to convert an arbitrary Image to BufferedImage...
         BufferedImage img = new BufferedImage(

@@ -2,7 +2,7 @@ import java.util.*;
 
 public class EnumDemo {
 
-    private static enum Day {
+    private enum Day {
         // possible values of this particular enum type
         SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY;
         
@@ -21,12 +21,11 @@ public class EnumDemo {
          // Enums can also be used in switches (like int or char)
         System.out.println("Listing weekdays with a switch");
         for(Day d: Day.values()) {
-            System.out.print(d + " is ");  
-            switch(d) {
-                case SATURDAY: case SUNDAY:
-                    System.out.println("not a weekday"); break;
-                default:
-                    System.out.println("a weekday");
+            System.out.print(d + " is ");
+            switch (d) {
+                case SATURDAY:
+                case SUNDAY: { System.out.println("not a weekday"); break; }
+                default: System.out.println("a weekday");
             }
         }
         
@@ -36,7 +35,7 @@ public class EnumDemo {
         for(Day d: weekdays) { System.out.println(d); }
         
         // EnumMap is the efficient Map implementation for Enums
-        EnumMap<Day, Boolean> weekdayMap = new EnumMap<Day, Boolean>(Day.class);
+        EnumMap<Day, Boolean> weekdayMap = new EnumMap<>(Day.class);
         for(Day d: Day.values()) { weekdayMap.put(d, d.isWeekday()); }
         System.out.println("Listing weekdays with an EnumMap");
         for(Day d: Day.values()) {

@@ -14,7 +14,7 @@ public class ImageOpsDemo {
     // An example of filtering an image with a subtype of RGBImageFilter.
     public static Image scrambleRGB(Image img, final int xs, final int ys) {
         class Scramble extends RGBImageFilter {
-            public int filterRGB(int x, int y, int rgb) {
+            @Override public int filterRGB(int x, int y, int rgb) {
                 // Extract the individual rgb values from the packed int.
                 int a = (rgb >> 24) & 0xFF;
                 int r = (rgb >> 16) & 0xFF;
@@ -36,14 +36,13 @@ public class ImageOpsDemo {
         // The magic incantations to apply an ImageFilter to an image.
         ImageFilter filter = new Scramble();
         ImageProducer producer = new FilteredImageSource(img.getSource(), filter);
-        Image image = Toolkit.getDefaultToolkit().createImage(producer);
-        return image;
+        return Toolkit.getDefaultToolkit().createImage(producer);
     }
     
     public static Image rotate(Image img, int steps) {
         // Rotations are special case of affine transforms.
         AffineTransform rot90 = AffineTransform.getRotateInstance(
-            steps * Math.PI / 2, img.getWidth(null) / 2, img.getHeight(null) / 2
+            steps * Math.PI / 2.0, img.getWidth(null) / 2.0, img.getHeight(null) / 2.0
         );
         // Create a BufferedImageOp from that transformation.
         BufferedImageOp aop = new AffineTransformOp(rot90, AffineTransformOp.TYPE_BICUBIC);
@@ -54,23 +53,23 @@ public class ImageOpsDemo {
         Image result = Toolkit.getDefaultToolkit().createImage(producer);
         MediaTracker m = new MediaTracker(new JPanel());
         m.addImage(result, 0);
-        try { m.waitForAll(); } catch(InterruptedException e) { }
+        try { m.waitForAll(); } catch(InterruptedException ignored) { }
         return result;
     }
     
     // Many image processing operations can be rephrased as image convolutions
     // where different kernels achieve different ends. See the Wikipedia page
-    // https://en.wikipedia.org/wiki/Kernel_(image_processing) for a taste.
-    // Too bad this library does not have "deconvolution" like Wolfram...
+    // https://en.wikipedia.org/wiki/Kernel_(image_processing) for a taste. Too
+    // bad the Java graphics library does not also have "deconvolution" like Wolfram...
     
-    public static Image boxBlur(Image img, int r) {
-        // The kernel of convolution is a rectangle of weights.
-        r = 2*r + 1;
+    public static Image boxBlur(Image img, int r) {   
+        r = 2*r + 1; // (Kernel sizes are usually odd, but they don't have to be.)
         int rr = r * r;
         float n = 1.0f / rr;
         float[] a = new float[rr];
         Arrays.fill(a, n);
-        Kernel kernel = new Kernel(r, r, a);
+        // The kernel of convolution is a rectangle of weights.
+        Kernel kernel = new Kernel(r, r, a); 
         // A convolution is determined by its kernel.
         BufferedImageOp edge = new ConvolveOp(kernel);
         ImageFilter filter = new BufferedImageFilter(edge);
@@ -79,18 +78,18 @@ public class ImageOpsDemo {
         Image result = Toolkit.getDefaultToolkit().createImage(producer);
         MediaTracker m = new MediaTracker(new JPanel());
         m.addImage(result, 0);
-        try { m.waitForAll(); } catch(InterruptedException e) { }
+        try { m.waitForAll(); } catch(InterruptedException ignored) { }
         return result;
     }
     
     // A little utility class to display images as Swing components.
     private static class ImagePanel extends JPanel {
-        private Image img;
-        private String toolTip;
+        private final Image img;
         public ImagePanel(Image img, String toolTip) {
-            this.img = img; this.toolTip = toolTip;
+            this.img = img;
             this.setToolTipText(toolTip);
             this.setPreferredSize(new Dimension(img.getWidth(this), img.getHeight(this)));
+            this.setBorder(BorderFactory.createEtchedBorder());
         }
         public void paintComponent(Graphics g) {
             g.drawImage(img, 0, 0, this);

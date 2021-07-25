@@ -30,7 +30,7 @@ public class Java5Demo {
     // after compilation, it would not show up in the following output.
     public static void annotationDemo() {
         AnnotationTest at = new AnnotationTest();
-        Class c = at.getClass();
+        Class<? extends AnnotationTest> c = at.getClass();
         for(Annotation ant: c.getAnnotations()) {
             System.out.print("Found annotation: " + ant);
         }
@@ -44,9 +44,9 @@ public class Java5Demo {
         Integer c = 42;
         Integer d = 9999;
         Integer e = new Integer(9999);
-        if(a == c) { out.println("a == c"); } // true
+        if(a.equals(c)) { out.println("a == c"); } // true
         if(b == d) { out.println("b == d"); } // true (primitive == wrapper)
-        if(d == e) { out.println("d == e"); } // false (can you explain why?)
+        if(d.equals(e)) { out.println("d == e"); } // false (can you explain why?)
     }
     
     // Varargs
@@ -66,7 +66,7 @@ public class Java5Demo {
     
     // Adapted from a thread in Stack Overflow. Truly evil.
     public static void orwellian() throws Exception {
-        Class cache = Integer.class.getDeclaredClasses()[0];
+        Class<?> cache = Integer.class.getDeclaredClasses()[0];
         Field c = cache.getDeclaredField("cache");
         c.setAccessible(true);
         Integer[] array = (Integer[]) c.get(cache);
@@ -79,7 +79,7 @@ public class Java5Demo {
     // Queue collections: an absurdity in terms. Saying that a Queue is-a
     // Collection is just like saying that a Car is-an Engine.
     public static void queueDemo() {
-        Queue<Integer> aq = new PriorityQueue<Integer>();
+        Queue<Integer> aq = new PriorityQueue<>();
         aq.add(7); aq.offer(2); aq.offer(3);
         out.println("head element: " + aq.peek()); // 2
         out.println("popped element: " + aq.remove()); // 2

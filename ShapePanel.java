@@ -11,7 +11,7 @@ import javax.swing.border.*;
 
 public class ShapePanel extends JPanel {
   
-    private boolean antiAlias;
+    private final boolean antiAlias;
     
     /**
      * Constructor for the class.
@@ -69,10 +69,12 @@ public class ShapePanel extends JPanel {
         // Constructive solid geometry operations add, subtract, intersect and exclusiveOr
         // can create complex shapes by combining simpler shapes together. 
         elli.subtract(new Area(new Ellipse2D.Double(400, 100, 50, 50)));
+        
         // Now we get to admire the results.
         g2.setPaint(new GradientPaint(370, 60, Color.BLACK, 360, 150, Color.WHITE));
         // Polymorphic draw and fill methods deal with our new custom Area no problemo.
-        // These methods expect some kind of Shape, and every Area is a Shape.
+        // These methods expect some kind of Shape, and every Area is a Shape. That's
+        // all there is to it with polymorphic methods, really.
         g2.fill(elli);
         // When rendering piecewise shapes, make sure to use nice cap and join settings.
         g2.setStroke(new BasicStroke(5.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
@@ -84,17 +86,18 @@ public class ShapePanel extends JPanel {
         // defined by the component bounds.
         Path2D.Double path = new Path2D.Double(); // outline path of the shape
         int points = 10; // Try out different values to see how these formulas work.
-        int n = 2 * points; // Given as a polygon, a ten-point star has twenty corner points.
+        int n = 2 * points; // As a polygon, a ten-point star has twenty corner points.
         for(int i = 0; i < n; i++) {
             double a = i * 2 * Math.PI / n; // Angles are given in radians.
             double r = (i % 2 == 0) ? 100 : 50; // Tip or groove?
             if(i == 0) { // Starting point of the polygon starts the path.
                 path.moveTo(150 + r * Math.cos(a), 250 + r * Math.sin(a)); 
             }
-            else { // Line segment edges.
+            else { // Consecutive line segment edges.
                 path.lineTo(150 + r * Math.cos(a), 250 + r * Math.sin(a)); 
             }
         }
+        
         // A closed path into can be turned into an Area that it encloses.
         Area area = new Area(path);
         g2.setStroke(new BasicStroke(5.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
@@ -103,7 +106,9 @@ public class ShapePanel extends JPanel {
         g2.setPaint(Color.BLACK);
         g2.draw(area);
         
-        // Finally, here is how to render some text.
+        // Finally, here is how you can render some text. The glyphs defined in each font
+        // are just curves and line segments, and their rendering is fundamentally no
+        // different from the rendering of the above shapes.
         g2.setColor(Color.BLACK);
         g2.setFont(new Font("Times", Font.ITALIC, 28)); // hook to the fonts in your system
         g2.drawString("Hello, wyrld!", 300, 250); // letter y reaches below baseline

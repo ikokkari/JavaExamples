@@ -109,10 +109,10 @@ public class MoreLoopExamples {
     // under that area. Use this percentage of the larger area as an estimate
     // for the smaller area.
     
-    private static String seed = 
+    private static final String seed =
     "Serious long simulations require a serious random number generator " +
     "that has sufficient entropy to generate reliable results.";
-    private static Random rng = new SecureRandom(seed.getBytes());
+    private static final Random rng = new SecureRandom(seed.getBytes());
     
     /**
      * Estimate the area of the unit circle with Monte Carlo estimation.

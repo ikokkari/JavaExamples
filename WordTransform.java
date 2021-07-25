@@ -5,8 +5,8 @@
 public class WordTransform {
   
     // Something that transforms a word into some other word.
-    private static interface Transform {
-        public String transform(String word);        
+    private interface Transform {
+        String transform(String word);
     }
     
     // Reverse the given word, maintaining case.
@@ -62,10 +62,10 @@ public class WordTransform {
                 }
                 else {
                     if(Character.isUpperCase(c)) {
-                        result.append("Ub" + Character.toLowerCase(c));
+                        result.append("Ub").append(Character.toLowerCase(c));
                     }
                     else {
-                        result.append("ub" + c);
+                        result.append("ub").append(c);
                     }
                 }
             }

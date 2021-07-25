@@ -25,17 +25,18 @@ public class Sliders extends JPanel {
     // The RNG used by sliders to choose their random movements.
     //private static final Random rng = new Random();
     // Width and height of board, measured in tiles.
-    private int width, height;
+    private final int width;
+    private final int height;
     // Semaphore guarding mutual exclusion to enter some tile. To be able
     // to move from tile (sx, sy) to tile (tx, ty), the slider must acquire
     // the permit to both tiles.
-    private Semaphore[][] permitToEnter;
+    private final Semaphore[][] permitToEnter;
     // The sliders that exist on the board.
-    private Slider[] sliders;
+    private final Slider[] sliders;
     // Whether the game should still be running.
     private volatile boolean running = true;
     // Animation timer for the component.
-    private javax.swing.Timer timer;
+    private final javax.swing.Timer timer;
     // The possible directions that an individual slider can move to.
     private static final int[][] DIRS = {
         {1, 0}, {0, 1}, {-1, 0}, {0, -1}
@@ -128,8 +129,7 @@ public class Sliders extends JPanel {
                         }
                     }
                 }
-                catch(Exception e) {                     
-                }
+                catch(Exception ignored) { }
             });
             // We don't start this thread yet. Only after everybody is ready to go.
         }
@@ -168,12 +168,13 @@ public class Sliders extends JPanel {
             occupied[x][y] = true;
             // Create a new slider to that tile.
             sliders[i] = new Slider(x, y, rng.nextInt(50) + 10);
-            try { permitToEnter[x][y].acquire(); } catch(Exception e) { } 
+            try { permitToEnter[x][y].acquire(); }
+            catch(Exception ignored) { }
         }
         // Once all sliders have been placed on board, tell sliders to move.
         for(int i = 0; i < n; i++) { sliders[i].start(); }
         // Animation timer to repaint this component at 50 fps.
-        timer = new javax.swing.Timer(20, ae -> { repaint(); } );
+        timer = new javax.swing.Timer(20, ae -> repaint());
         timer.start();
     }
     

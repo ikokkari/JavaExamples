@@ -25,7 +25,9 @@ public class GZip {
             do {
                 b1 = i1.read();
                 b2 = i2.read();
-                if(b1 != b2) { zipped.delete(); return; }
+                if(b1 != b2) {
+                    zipped.delete(); return;
+                }
             } while(b1 > -1);
             original.delete();
         }

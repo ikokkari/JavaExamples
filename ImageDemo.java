@@ -13,9 +13,11 @@ import javax.imageio.ImageIO; // image read and write from file
  */
 
 public class ImageDemo extends JPanel {
-    private Image coffee, flappy, lilcoffee;
-    private BufferedImage bimg1, bimg2;
-    private Random rng = new Random();
+    private Image coffee;
+    private Image flappy;
+    private final BufferedImage bimg1;
+    private final BufferedImage bimg2;
+    private final Random rng = new Random();
     
     // Utility method to pack three RGB components into bytes of single int.
     private int convertToRGB(int r, int g, int b) {
@@ -30,7 +32,7 @@ public class ImageDemo extends JPanel {
         
         // Images can be easily scaled to desired size.
         coffee = coffee.getScaledInstance(800, 600, Image.SCALE_AREA_AVERAGING);
-        lilcoffee = coffee.getScaledInstance(50, 50, Image.SCALE_AREA_AVERAGING);
+        Image lilcoffee = coffee.getScaledInstance(50, 50, Image.SCALE_AREA_AVERAGING);
         flappy = flappy.getScaledInstance(25, 25, Image.SCALE_AREA_AVERAGING);
         
         // We can also create our own BufferedImage and draw stuff in it the
@@ -57,7 +59,9 @@ public class ImageDemo extends JPanel {
         JButton button = new JButton(new ImageIcon(lilcoffee));
         this.add(button);
         button.addActionListener(new ButtonListener());
-        this.setPreferredSize(new Dimension(coffee.getWidth(this) + 256, coffee.getHeight(this)));
+        this.setPreferredSize(
+            new Dimension(coffee.getWidth(this) + 256, coffee.getHeight(this))
+        );
     }
     
     private class ButtonListener implements ActionListener {

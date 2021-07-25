@@ -6,7 +6,7 @@ public class WordFrequency {
     // To run this program, change the FILENAME to some text file that you have.
     private static final String FILENAME = "warandpeace.txt";
     
-    private static String[][] replacements = {
+    private static final String[][] replacements = {
       { "doesn't", "does not" },
       { "don't", "do not" },
       { "you're", "you are" },
@@ -19,9 +19,7 @@ public class WordFrequency {
       { "shouldn't", "should not" },
       { "mustn't", "must not" }
     };
-    
-    private static String wordSeparators = "[^a-z]+";
-    
+
     public static Map<String, Integer> wordFrequencies(Scanner s) {
         Map<String, Integer> freqs = new HashMap<>();
         while(s.hasNextLine()) {
@@ -32,6 +30,7 @@ public class WordFrequency {
             line = line.replaceAll("'s\\b", ""); // In regex, \b is word boundary marker
             line = line.replaceAll("'ll\\b", " will");
             line = line.replaceAll("'t\\b", "");
+            String wordSeparators = "[^a-z]+";
             for(String word: line.split(wordSeparators)) {
                 // Lines that start with the quote character will end up having an
                 // empty word at the front of the split line array. Thus this check.
@@ -45,9 +44,9 @@ public class WordFrequency {
     
     // To make the later output nicely divided into lines of given length. 
     private static class LinePrinter {
-        private int lineMax; // Maximum desired length of a line.
+        private final int lineMax; // Maximum desired length of a line.
         private int lineLen; // Length of the current line.
-        private PrintWriter out; // Where to direct the printed characters.
+        private final PrintWriter out; // Where to direct the printed characters.
         private boolean firstInLine = true; // Is the current word first in this line?
         public LinePrinter(PrintWriter out, int lineMax) {
             this.out = out;
@@ -100,9 +99,9 @@ public class WordFrequency {
         }
         
         // Create an arraylist of words that we can sort them.
-        ArrayList<String> wordList = new ArrayList<String>(freqs.keySet());
+        ArrayList<String> wordList = new ArrayList<>(freqs.keySet());
         // Sort the arraylist using our frequency comparator.
-        Collections.sort(wordList, new FreqComparator());
+        wordList.sort(new FreqComparator());
         System.out.println("\nThe three hundred most frequent words of 'War and Peace' are:\n");
         LinePrinter lp = new LinePrinter(new PrintWriter(System.out), 80);
         for(int i = 0; i < 300; i++) {

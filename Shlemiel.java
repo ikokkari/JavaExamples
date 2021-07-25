@@ -7,6 +7,7 @@ import java.math.BigInteger;
  * single pass algorithms.
  * @author Ilkka Kokkarinen
  */
+
 public class Shlemiel {
     
     /**
@@ -98,10 +99,12 @@ public class Shlemiel {
     public static boolean canBalance(int[] a) {
         int leftSum = 0, rightSum = 0;
         for(int e: a) { rightSum += e; }
-        for(int i = 0; i < a.length; i++) {
-            leftSum += a[i]; // O(1) update of leftSum and rightSum, instead of O(n)
-            rightSum -= a[i];
-            if(leftSum == rightSum) { return true; }
+        for (int j : a) {
+            leftSum += j; // O(1) update of leftSum and rightSum, instead of O(n)
+            rightSum -= j;
+            if (leftSum == rightSum) {
+                return true;
+            }
         }
         return false;
     }
@@ -160,24 +163,6 @@ public class Shlemiel {
     }
     
     /**
-     * Given an {@code n}-element integer array, determine whether it contains
-     * each number from 1 to {@code n} exactly once. This is the classic bitwise
-     * arithmetic solution, needing O(n) time and O(1) memory.
-     * @param a The array to check.
-     * @param n The largest value to look for.
-     * @return {@code true} if each number occurs exactly once, {@code false} otherwise.
-     */
-    
-    public static boolean containsAllNumbersXor(int[] a, int n) {
-        int check = 0;
-        for(int i = 0; i < n; i++) {
-            if(a[i] < 1 || a[i] > n) { return false; }
-            check = check ^ a[i] ^ i; // ^ is integer exclusive or, not exponentiation
-        }
-        return check == 0; // Every bit must cancel out as many times as it checks in
-    }
-    
-    /**
      * Remove all strings from the given arraylist of strings whose length is shorter than len.
      * @param a The arraylist of strings to process.
      * @param len The threshold length for a string to remain in the list.
@@ -197,7 +182,7 @@ public class Shlemiel {
      * @param len The threshold length for a string to remain in the list.
      */
     public static void removeShortStrings(ArrayList<String> a, int len) {
-        ArrayList<String> tmp = new ArrayList<String>();
+        ArrayList<String> tmp = new ArrayList<>();
         for(String e : a) { // total of O(n) over n rounds
             if(e.length() >= len) { tmp.add(e); } // O(1) amortized
         }
@@ -241,7 +226,7 @@ public class Shlemiel {
      */
     public static boolean isProperlyParenthesized(String s) {
         // Stack-based solution to verify that string is properly parenthesized.
-        Stack<Character> stack = new Stack<Character>();
+        Stack<Character> stack = new Stack<>();
         for(int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if(c == '(' || c == '[' || c == '{') { stack.push(c); }

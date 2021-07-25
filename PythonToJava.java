@@ -2,8 +2,12 @@
 
 // In Java, all package imports must be placed at the beginning of the file.
 
-import java.math.BigInteger; // akin to "from java.math import BigInteger"
-import java.util.*; // akin to "from java.util import *"
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.TreeSet;
 
 /* 
  * Java program must consist of classes, one class per file. The source code for
@@ -26,8 +30,10 @@ public class PythonToJava {
     // caught in the compile time, before the unit testing.
 
     public static String ryersonLetterGrade(int pct) {
-        // Local variable declarations must also be explicitly typed.
-        String result = "";
+        // Local variable declarations must also be explicitly typed. However,
+        // a variable does not need to be initialized right away, as long as
+        // every possible execution path initializes it before the use.
+        String result;
         // Handle F and A levels as special cases.
         if(pct < 50) { 
             result = "F"; 
@@ -39,7 +45,7 @@ public class PythonToJava {
         else { 
             int tens = pct / 10; // This is now known to be 5, 6 or 7.
             result = "DCB".substring(tens - 5, tens - 4); // (cute trick)
-            int ones = pct % 10; // Integer remainder operator %, as in Python.
+            int ones = pct % 10; // Integer remainder operator %, almost as in Python.
             if(ones < 3) { result += "-"; } // Shorthand a += b for a = a + b;
             else if(ones > 6) { result += "+"; }
         }
@@ -113,14 +119,14 @@ public class PythonToJava {
         }
         return result;
     }
-    
+
     // Java has a while-loop and for-loop, but then also a do-while loop that Python
     // does not have. In practice it is quite rare, maybe about 2% of all loops. But
     // when it is time to use it, then it is time to use it. Here is a blast from the
     // ancient past, Heron's algorithm for numerical approximation of square roots.
     public static double heronRoot(double x, boolean verbose) {
         double guess = x / 2; // we have to start from somewhere
-        double prev = 0;
+        double prev;
         do {
             if(verbose) { System.out.println("Current guess is " + guess); }
             // Current guess becomes the previous guess.
@@ -142,25 +148,21 @@ public class PythonToJava {
     }
 
     // Java and similar languages have a switch-statement for long if-else ladders.
-    // The moronic thing about it is having to end each case with an explicit break,
-    // otherwise the execution will just "fall through" to execute the next case.
+    // Java 15 introduces switch expressions. Uncomment to experience the freedom.
+    /*
     public static int daysInMonth(int m, boolean leapYear) {
-        int days;
-        switch(m) {
+        return switch (m) {
             // Multiple cases that share a body can be combined together.
-            case 1: case 3: case 5: case 7: case 8: case 10: case 12:
-            days = 31; break;
-            case 2:
-            // Python equivalent: d = 29 if leapYear else 28
-            days = (leapYear? 29 : 28); // Java ternary selection COND ? POS : NEG
-            break; 
-            case 4: case 6: case 9: case 11:
-            days = 30; break;
-            default: // Kind of "none of the above" option.
-            days = 0;
-        }
-        return days;
+            case 1, 3, 5, 7, 8, 10, 12 -> 31;
+            case 2 ->
+                    // Python equivalent: d = 29 if leapYear else 28
+                    (leapYear ? 29 : 28); // Java ternary selection COND ? POS : NEG
+            case 4, 6, 9, 11 -> 30;
+            default -> // Kind of "none of the above" option.
+                    0;
+        };
     }
+    */
 
     // Same as in Python, Java strings are immutable. For the common operation of
     // building up a string by appending stuff piecemeal, use mutable StringBuilder.
@@ -176,7 +178,7 @@ public class PythonToJava {
             if(curr == prev) { count++; } // count++ is shorthand for count += 1.
             else {
                 if(count > 0) {
-                    result.append("" + count); result.append(prev);                     
+                    result.append(count); result.append(prev);
                 }
                 count = 1; prev = curr;
             }
@@ -193,21 +195,14 @@ public class PythonToJava {
     // a car even if you don't know how a combustion engine actually works.
     public static List<String> allCyclicShifts(String text) {
         // Keep track of which strings have already been produced.
-        TreeSet<String> alreadySeen = new TreeSet<String>();
+        TreeSet<String> alreadySeen = new TreeSet<>();
         // Iterate through all possible cutting points.
         for(int i = 0; i < text.length(); i++) {
             alreadySeen.add(text.substring(i) + text.substring(0, i));            
         }
         // Java collection instances can be created from existing instances. Since
         // we used a TreeSet instead of HashSet, iteration guarantees sorted order.
-        return new ArrayList<String>(alreadySeen);
-    }
-
-    // Members of class marked private may not be accessed from the outside.    
-    private static List<BigInteger> fibs = new ArrayList<BigInteger>();
-    static { // Executed when the class bytecode is loaded into JVM.
-        fibs.add(BigInteger.ONE); // First two Fibonacci numbers are 1, 1.
-        fibs.add(BigInteger.ONE);
+        return new ArrayList<>(alreadySeen);
     }
 
     // The starting point of execution when a Java class is run as a standalone program.
@@ -223,7 +218,7 @@ public class PythonToJava {
         ar = riffle(ar);
         System.out.printf("Riffled again, these elements are %s.\n", Arrays.toString(ar));
 
-        List<Integer> p = new ArrayList<Integer>(); // Empty list
+        List<Integer> p = new ArrayList<>(); // Empty list
         // (Java does not have Python list comprehensions.)
         for(int i = 0; i < 10; i++) { p.add(i + 1); } // Add elements to it.
         System.out.println("\nChecking out some permutations.");
@@ -242,24 +237,18 @@ public class PythonToJava {
 
         System.out.println("\nThe first 15 rows of Pascal's triangle.");
         int[][] pascal = pascalTriangle(15);
-        for(int row = 0; row < pascal.length; row++) {
-            for(int col = 0; col < pascal[row].length; col++) {
+        for (int[] ints : pascal) {
+            for (int anInt : ints) {
                 // C-style printf for formatted output exactly as given.
-                System.out.printf("%-5d", pascal[row][col]);
+                System.out.printf("%-5d", anInt);
             }
-            System.out.println("");
+            System.out.println();
         }
 
         System.out.println("\nSquare root of 2.0 equals about " + heronRoot(2.0) + ".");
 
-        System.out.println("\nThe number of days in each month is:");
-        for(int m = 1; m <= 12; m++) {
-            if(m > 1) { System.out.print(", "); }
-            System.out.print(daysInMonth(m, false));
-        }
-
         String digits = "333388822211177";
-        System.out.println("\n\n\"Count and say\" for digits " + digits + " produces "
+        System.out.println("\n\"Count and say\" for digits " + digits + " produces "
             + countAndSay(digits) + ".");
 
         String[] pats = {"01001", "010101", "hello", "xxxxxxx"};
@@ -269,3 +258,5 @@ public class PythonToJava {
         }
     }
 }
+
+// no longer inside the class PythonToJava

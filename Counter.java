@@ -5,11 +5,12 @@ import javax.swing.border.*;
 
 public class Counter extends JPanel {
 
+    private static final Font buttonFont = new Font("Arial", Font.PLAIN, 28);
     private int count = 0;
     
     public Counter() {
         this.setPreferredSize(new Dimension(300, 80));
-        // Every Swing component can have a festive and decorative border.
+        // Every Swing component can have an arbitrarily festive and decorative border.
         this.setBorder(BorderFactory.createSoftBevelBorder(
             BevelBorder.RAISED, Color.BLUE, Color.CYAN, Color.RED, Color.YELLOW)
         );
@@ -23,7 +24,7 @@ public class Counter extends JPanel {
         this.add(lab);
         
         JButton but = new JButton("Press me");
-        but.setFont(new Font("Arial", Font.PLAIN, 28));
+        but.setFont(buttonFont);
         but.setToolTipText("Click to increase the count");
         this.add(but);
         
@@ -45,9 +46,11 @@ public class Counter extends JPanel {
     public static void main(String[] args) {
         JFrame f = new JFrame("Counter demo");
         f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        f.setLayout(new GridLayout(4, 4));
-        // Let's add sixteen separate Counters, just to show what happens.
-        for(int i = 0; i < 16; i++) {
+        
+        // Let's add sixteen separate Counter instances, just to show what happens.
+        int n = 4; 
+        f.setLayout(new GridLayout(n, n));
+        for(int i = 0; i < n*n; i++) {
             f.add(new Counter());
         }
         f.pack();

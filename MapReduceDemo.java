@@ -9,7 +9,7 @@ public class MapReduceDemo {
     // all that anonymous subclass boilerplate rigmarole automatically.
     // This predicate is stateless, so it can be used in a parallel
     // stream of integers as well as sequential stream.
-    private static IntPredicate primeTester = n -> {
+    private static final IntPredicate primeTester = n -> {
         if(n < 2) { return false; }
         if(n == 2) { return true; }
         if(n % 2 == 0) { return false; }
@@ -31,13 +31,13 @@ public class MapReduceDemo {
             .skip(10) // skip the first 10
             .limit(90) // and take the first 90 of the rest
             .map(e -> e * e) // square the numbers
-            .reduce(0, (state, element) -> state + element) // and add them up
+            .reduce(0, Integer::sum) // and add them up
         );
         
         // Many other standard classes in Java are retrofitted to generate streams.
         List<Integer> nums = Arrays.asList(16, 15, 22, 9, 7, 82, 17);
         System.out.println("The first prime number in the list is " + nums.stream()
-        .mapToInt(x -> x.intValue())
+        .mapToInt(Integer::intValue)
         .filter(primeTester)
         .findFirst() // An OptionalInt, as stream could be empty (this one isn't)
         .orElse(-1) // This is an OptionalInt method, not a Collector
@@ -45,7 +45,7 @@ public class MapReduceDemo {
         
         nums = Arrays.asList(4, 8, 15); // Let's try the same thing with no primes.
         System.out.println("The first prime number in the list is " + nums.stream()
-        .mapToInt(x -> x.intValue())
+        .mapToInt(x -> x)
         .filter(primeTester)
         .findFirst()
         .orElse(-1));
@@ -75,10 +75,10 @@ public class MapReduceDemo {
         System.out.println("Here are some filtered random numbers.");
         Random rng = new Random();
         System.out.println(
-            Stream.generate( () -> rng.nextDouble())
+            Stream.generate(rng::nextDouble)
             .filter(x -> x < 0.5)
             .limit(10)
-            .map(x -> x.toString())
+            .map(Object::toString)
             .collect(Collectors.joining(", ", "<< ", " >>")) // French style quote marks
         );
 
@@ -102,7 +102,8 @@ public class MapReduceDemo {
         // the predicate can depend on things other than the element, although such a
         // stateful predicate would be nondeterministic if used in a parallel stream.
         class CountPredicate<T> implements Predicate<T> {
-            private int limit, count;
+            private final int limit;
+            private int count;
             public CountPredicate(int limit) {
                 this.limit = limit;
             }
@@ -116,7 +117,7 @@ public class MapReduceDemo {
         System.out.println("Here is every fifth Fibonacci number:");
         Stream.generate(new FibSupplier())
             //.parallel() // uncomment this line for some goofy nondeterminism
-            .filter(new CountPredicate<BigInteger>(5))
+            .filter(new CountPredicate<>(5))
             .limit(100)
             .forEach(System.out::println); // method reference with :: operator    
         

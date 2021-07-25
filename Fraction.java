@@ -30,18 +30,6 @@ public class Fraction implements Comparable<Fraction> {
      */
     public BigInteger getDen() { return den; }
     
-    // To convert a BigInteger to an int, just call its method intValue().
-    // To convert a Fraction to a double approximation is a bit harder.
-    /**
-     * Convert this fraction into the closest possible {@code double} value.
-     * @return This fraction as the closest possible {@code double}.
-     */
-    public double doubleValue() {
-        BigDecimal nd = new BigDecimal(num);
-        BigDecimal dd = new BigDecimal(den);
-        return nd.divide(dd, 20, BigDecimal.ROUND_UP).doubleValue();
-    }
-    
     /**
      * Construct a fraction from given numerator and denominator, as ints.
      * @param num The numerator of the fraction.
@@ -122,12 +110,13 @@ public class Fraction implements Comparable<Fraction> {
     
     /**
      * Check the equality of this fraction and the {@code other} fraction.
-     * @param other The other fraction of the equality comparison.
+     * @param o The other fraction of the equality comparison.
      * @return {@code true} if the fractions are equal, {@code false} otherwise.
      */
     public boolean equals(Object o) {
-        if(o instanceof Fraction) {
-            Fraction other = (Fraction) o; // downcast to correct subtype
+        if(o instanceof Fraction) { // instanceof pattern variable
+            // downcast to correct subtype
+            Fraction other = (Fraction)o;
             return (this.num.equals(other.num) && this.den.equals(other.den));
         }
         else {

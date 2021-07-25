@@ -36,7 +36,7 @@ public class ImageLoops {
         f.setLayout(new FlowLayout());
 
         class ImagePanel extends JPanel {
-            private BufferedImage[] imgs = new BufferedImage[6];
+            private final BufferedImage[] imgs = new BufferedImage[6];
             public ImagePanel() {
                 this.setPreferredSize(new Dimension(3*SIZE + 4*PAD, 2*SIZE + 3*PAD));
                 this.setBackground(new Color(30, 30, 60));
@@ -44,7 +44,7 @@ public class ImageLoops {
                     (x, y) -> (x / BOX) % 2 != (y / BOX) % 2
                 );
                 imgs[1] = computeImage(SIZE, SIZE,
-                    (x, y) -> (3*x + 2*y) / (BOX * 3) % 2 == 0
+                    (x, y) -> (5*x + 3*y) / (BOX * 3) % 2 == 0
                 );
                 imgs[2] = computeImage(SIZE, SIZE,
                     (x, y) -> (x / BOX) % 2 == 0 && ((y + 3*x/BOX) / BOX) % 2 == 0
@@ -56,13 +56,13 @@ public class ImageLoops {
                 imgs[4] = computeImage(SIZE, SIZE, (x, y) -> {
                     int xd = Math.abs(SIZE/2 - 1 - x) / BOX;
                     int yd = Math.abs(SIZE/2 - 1 - y) / BOX;
-                    int d = xd > yd? xd: yd; 
+                    int d = Math.max(xd, yd);
                     return (d % 2) == 0;
                 });
                 imgs[5] = computeImage(SIZE, SIZE, (x, y) -> {
-                    int c = x*x-2*(x|y)+y*y + (x^y);
+                    int c = x*x-2*(x&y)+y|x + (x^y);
                     c = c % 256;
-                    return c < -127 || c > 127;
+                    return c < -55 || c > 106;
                 });
             }
 

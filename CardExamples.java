@@ -38,9 +38,9 @@ public class CardExamples {
      * @return The hand of cards as string.
      */
     private static String createHand(Random rng, int len) {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         for(int i = 0; i < len; i++) {
-            String card = "";
+            String card;
             outer:
             while(true) {
                 // Create a random card.
@@ -52,9 +52,9 @@ public class CardExamples {
                 }
                 break;
             }
-            result += card;
+            result.append(card);
         }
-        return result;
+        return result.toString();
     }
     
     // A private utility method to convert a card character to its blackjack value.

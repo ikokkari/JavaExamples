@@ -1,5 +1,12 @@
-import java.io.*;
-import java.util.regex.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 public class SomeUnixCommands {
 
@@ -24,7 +31,7 @@ public class SomeUnixCommands {
         PrintWriter pw = new PrintWriter(out);
         String line;
         while((line = br.readLine()) != null) {
-            pw.println(new StringBuilder(line).reverse().toString());
+            pw.println(new StringBuilder(line).reverse());
         }
         pw.flush();
     }
@@ -51,18 +58,18 @@ public class SomeUnixCommands {
     public static void main(String[] args) throws IOException {
         
         System.out.println("Lorem ipsum:");
-        Reader r = new InputStreamReader(new FileInputStream("lorem.txt"), "UTF-8");
+        Reader r = new InputStreamReader(new FileInputStream("lorem.txt"), StandardCharsets.UTF_8);
         uniq(r, new OutputStreamWriter(System.out));
         r.close();
         
         System.out.println("Lorem ipsum reversed:");
-        r = new InputStreamReader(new FileInputStream("lorem.txt"), "UTF-8");
+        r = new InputStreamReader(new FileInputStream("lorem.txt"), StandardCharsets.UTF_8);
         rev(r, new OutputStreamWriter(System.out));
         r.close();
         
         int[] fields = {1, 3, 6};
         System.out.println("Second, fourth and seventh word of each line of Lorem ipsum:");
-        r = new InputStreamReader(new FileInputStream("lorem.txt"), "UTF-8");
+        r = new InputStreamReader(new FileInputStream("lorem.txt"), StandardCharsets.UTF_8);
         cut(r, new OutputStreamWriter(System.out), " ", fields);
         r.close();
     }

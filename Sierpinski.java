@@ -12,7 +12,7 @@ import java.util.*;
 public class Sierpinski extends JPanel {
 
     private boolean drawAll = true;
-    private Random rng = new Random();
+    private final Random rng = new Random();
     
     /**
      * Default constructor for suitably chosen component dimensions.

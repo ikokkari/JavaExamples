@@ -11,13 +11,14 @@ import java.awt.geom.*;
 
 public class Minesweeper extends JPanel {
 
-    private int gridWidth, gridHeight; // Game board width and height in tiles
-    private double prob; // Probability that a tile becomes a mine
+    private final int gridWidth;
+    private final int gridHeight; // Game board width and height in tiles
+    private final double prob; // Probability that a tile becomes a mine
     private boolean gameOn; // Is the game on?
     private boolean first; // Is the player opening the first tile?
     private boolean[][] isMine, isOpen, isMarked; // State of the gameboard
     private int[][] value; // Precomputed numerical values to show
-    private Random rng = new Random();
+    private final Random rng = new Random();
 
     private static final int TILESIZE = 30;
     private static final int XOFFSET = 10;
@@ -126,7 +127,7 @@ public class Minesweeper extends JPanel {
 
     private class MineListener extends MouseAdapter {            
         @Override public void mousePressed(MouseEvent me) {
-            if(gameOn == false) { startNewGame(); return; }
+            if(!gameOn) { startNewGame(); return; }
             int x = (me.getX() - XOFFSET) / TILESIZE;
             int y = (me.getY() - YOFFSET) / TILESIZE;
             if(me.getButton() == MouseEvent.BUTTON1) {
@@ -167,7 +168,7 @@ public class Minesweeper extends JPanel {
         // Generalization of the zero cell opening makes the game more fun
         boolean result = false;
         if(value[x][y] == countNeighbours(isMarked, x, y)) {
-            result |= openTile(x-1, y-1, false);
+            result = openTile(x - 1, y - 1, false);
             result |= openTile(x-1, y, false);
             result |= openTile(x-1, y+1, false);
             result |= openTile(x+1, y-1, false);

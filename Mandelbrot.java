@@ -1,7 +1,6 @@
 import java.awt.image.*;
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.event.*;
 import java.awt.event.*;
 import java.math.*;
 import java.util.*;
@@ -10,9 +9,9 @@ import java.util.concurrent.atomic.*;
 
 public class Mandelbrot extends JPanel {
     // The number of threads used to compute the image.
-    private static final int THREADS = 4;
+    private static final int THREADS = 10;
     // The size of this component in pixels.
-    private int sizeP;
+    private final int sizeP;
     // The complex number at the top left corner of image.
     private BigComplex top;
     // The size of our current "peephole" to the complex plane.
@@ -24,15 +23,13 @@ public class Mandelbrot extends JPanel {
     // The current selection box top (sx, sy) and bottom (bx, by).
     private int sx = -1, sy = -1, bx, by;
     // Timer to force regular repaints of the Swing component.
-    private javax.swing.Timer timer;
+    private final javax.swing.Timer timer;
     // The frontier of the current active rendering.
     private volatile PriorityBlockingQueue<Pixel> activeFrontier = null;
     // The singleton poison pixel that orders its recipient to stop working.
     private final Pixel POISON = new Pixel(-1, -1);
     // A global mutex for synchronization for image pixels.
-    private Semaphore pixelMutex = new Semaphore(1);
-    // The timestamp generator for task ID's.
-    private static final AtomicInteger RENDERSTAMP = new AtomicInteger(0);
+    private final Semaphore pixelMutex = new Semaphore(1);
     // The timestamp generator for pixel ages.
     private static final AtomicInteger AGESTAMP = new AtomicInteger(0);
     // Threshold radius for escape for the Mandelbrow iteration.
@@ -44,12 +41,12 @@ public class Mandelbrot extends JPanel {
     // Change this value for interesting DFS effects. Must be a positive integer.
     private static final int BUNCH = 100;
     // The ExecutorService to manage the threads behind the scenes.
-    private static ExecutorService es = Executors.newFixedThreadPool(THREADS);
+    private static final ExecutorService es = Executors.newFixedThreadPool(THREADS);
     // How often the screen image should be updated, delay in ms.
-    private static int TIMER_FREQ = 20;    
+    private static final int TIMER_FREQ = 20;
     // The colours used to render completed pixels.
     private static final int COLS = 1024;
-    private static int[] colours = new int[COLS];
+    private static final int[] colours = new int[COLS];
     // The neighbour directions from the current pixel.
     private static final int[][] DIRS = { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
 
@@ -68,11 +65,11 @@ public class Mandelbrot extends JPanel {
         return colours[c];
     }
 
-    // A class to reperesent the state of computation of an individual pixel.
+    // A class to represent the state of computation of an individual pixel.
     private class Pixel {
         public int x, y; // Image coordinates of this pixel.
         public int iter; // How many iterations this pixel has gone through.
-        private int age; // The creation time of this object.
+        private final int age; // The creation time of this object.
         public BigComplex c; // The original complex number that this pixel represents.
         public BigComplex z; // The current value of the iteration of this pixel.
 
@@ -166,9 +163,7 @@ public class Mandelbrot extends JPanel {
 
     private class Renderer implements Callable<Integer> {
         // The context in which this rendering happens.
-        private RenderingContext context;
-        // The index of this rendering task.
-        private int idx;
+        private final RenderingContext context;
         // The count of how many pixels were processed.
         private int pixelCount = 0;
 
@@ -217,13 +212,15 @@ public class Mandelbrot extends JPanel {
             } catch(Exception e) {
                 // Report the crash if it is some other than being interrupted.
                 if(!(e instanceof InterruptedException)) {
+                    // The index of this rendering task.
+                    int idx = 0;
                     System.out.println("Task " + idx + " crashed: " + e);
                     System.out.println("Printing the stack trace: ");
                     StackTraceElement[] trace = e.getStackTrace();
-                    for(int i = 0; i < trace.length; i++) {
-                        System.out.print(trace[i].getClassName() + " ");
-                        System.out.print(trace[i].getMethodName() + " ");
-                        System.out.println(trace[i].getLineNumber() + " ");
+                    for (StackTraceElement stackTraceElement : trace) {
+                        System.out.print(stackTraceElement.getClassName() + " ");
+                        System.out.print(stackTraceElement.getMethodName() + " ");
+                        System.out.println(stackTraceElement.getLineNumber() + " ");
                     }
                 }
             }
@@ -236,7 +233,7 @@ public class Mandelbrot extends JPanel {
     // Compute the image using current settings.
     public void computeImage(Comparator<Pixel> frontierComp) {
         int sc = bigScale(size);
-        BigComplex.mc = new MathContext(sc + 5); 
+        BigComplex.mc = new MathContext(sc + 4); 
         size = new BigDecimal(size.toString(), BigComplex.mc); // convert to higher precision
         top = new BigComplex( // convert to new math context
             new BigDecimal(top.getRe().toString(), BigComplex.mc),
@@ -261,8 +258,6 @@ public class Mandelbrot extends JPanel {
         activeFrontier = localFrontier;
 
         // Complex coordinates of top left corner.
-        final BigDecimal topX = top.getRe();
-        final BigDecimal topY = top.getIm();
         // Size of a single pixel in complex coordinates.
         psize = size.multiply(new BigDecimal(1.0 / sizeP, BigComplex.mc));
 
@@ -301,7 +296,7 @@ public class Mandelbrot extends JPanel {
 
     // The constructor with a good default starting value for complex coordinates.
     public Mandelbrot(final int sizeP) {
-        this(sizeP, new BigComplex(-2.0, 1.2), new BigDecimal(2.5, BigComplex.mc));
+        this(sizeP, new BigComplex(-2.0, 1.2), new BigDecimal("2.5", BigComplex.mc));
     }
 
     // The constructor to set up the component controls.
@@ -358,7 +353,7 @@ public class Mandelbrot extends JPanel {
             });
 
         computeImage(pixelComp); // Launch rendering the initial image.
-        this.timer = new javax.swing.Timer(TIMER_FREQ, (ae) -> { repaint(); });
+        this.timer = new javax.swing.Timer(TIMER_FREQ, (ae) -> repaint());
         this.timer.start(); // Launch the animation refresh timer.
     }
 

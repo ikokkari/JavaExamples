@@ -1,8 +1,3 @@
-/**
- * Demonstration of recursion with various methods implemented recursively.
- * @author Ilkka Kokkarinen
- */
-
 import java.util.Arrays;
 
 public class Recursion {
@@ -53,7 +48,7 @@ public class Recursion {
         int mid = (start + end) / 2;
         int mleft = min(a, start, mid);
         int mright = min(a, mid + 1, end);
-        return mleft < mright ? mleft : mright;
+        return Math.min(mleft, mright);
     }
 
     /**
@@ -69,14 +64,14 @@ public class Recursion {
         return a * power(a, b - 1);
     }
 
+    private double total = 0.0; // Shared fields outside recursion... just say no!
+
     /**
      * Compute the harmonic sum of the first {@code n} integers. This solution is made
      * intentionally bad to illustrate an important point about recursion.
      * @param n The number of terms in the harmonic sum.
      * @return The harmonic sum up to the term {@code n}.
      */
-    
-    private double total = 0.0; // Shared fields outside recursion... just say no!
     public double harmonicSum(int n) {
         if(n < 1) { return total; }
         total += 1.0 / n;

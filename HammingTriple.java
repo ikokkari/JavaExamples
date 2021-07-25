@@ -14,7 +14,9 @@ public class HammingTriple implements Comparable<HammingTriple> {
     private static final double logOf5 = Math.log(5);
  
     // The powers of this triple
-    private int a, b, c;
+    private int a;
+    private final int b;
+    private final int c;
  
     public HammingTriple(int a, int b, int c) {
         this.a = a; this.b = b; this.c = c;
@@ -72,7 +74,7 @@ public class HammingTriple implements Comparable<HammingTriple> {
         long startTime = System.currentTimeMillis();
  
         // The elements of the search frontier
-        PriorityQueue<HammingTriple> frontierQ = new PriorityQueue<HammingTriple>();
+        PriorityQueue<HammingTriple> frontierQ = new PriorityQueue<>();
         int maxFrontierSize = 1;
  
         // Initialize the frontier
@@ -89,13 +91,16 @@ public class HammingTriple implements Comparable<HammingTriple> {
                 if(verbose) {
                     System.out.println("Time: " + (System.currentTimeMillis() - startTime) + " ms");
                     System.out.println("Frontier max size: " + maxFrontierSize);
-                    System.out.println("As powers: " + curr.toString());
+                    assert curr != null;
+                    System.out.println("As powers: " + curr);
                     System.out.println("As value: " + curr.getValue());
                 }
+                assert curr != null;
                 return curr.getValue();
             }
  
             // Current times five, if at origin in (a,b) plane
+            assert curr != null;
             if(curr.a == 0 && curr.b == 0) {
                 frontierQ.offer(new HammingTriple(curr.a, curr.b, curr.c + 1));
             }

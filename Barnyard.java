@@ -25,22 +25,24 @@ public class Barnyard {
         public abstract String getSpecies();
         
         // All species of animals have same implementation of toString.
-        @Override final public String toString() { 
+        @Override final public String toString() {
             return getSpecies() + " that says " + getSound();
         }
     }
     
     // A concrete subclass of the previous abstract superclass.
     public static class Cat extends Animal {
-        private static Random rng = new Random();
+        private static final Random rng = new Random();
         public Cat() {
             System.out.println("Default constructor of Cat");
         }
         
-        @Override public String getSound() { 
-            return rng.nextInt(100) < 50? "meow": "purrrr"; 
+        @Override public String getSound() {
+            return rng.nextInt(100) < 50? "meow": "purrrr";
         }
-        @Override public String getSpecies() { return "cat"; }
+        @Override public String getSpecies() {
+            return "cat";
+        }
     }
     
     // A subclass can also be itself abstract.
@@ -97,7 +99,7 @@ public class Barnyard {
     // first consult the client and then modify the answer returned.
     
     public static class LoudAnimal extends Animal {
-        private Animal client;
+        private final Animal client;
         public LoudAnimal(Animal client) {
             this.client = client;
             System.out.println("Constructor of LoudAnimal with " + client);
@@ -112,7 +114,7 @@ public class Barnyard {
     
     // Another decorator subclass with the same idea.
     public static class MirroredAnimal extends Animal {
-        private Animal client;
+        private final Animal client;
         public MirroredAnimal(Animal client) {
             this.client = client;
             System.out.println("Constructor of MirroredAnimal with " + client);

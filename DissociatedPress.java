@@ -8,8 +8,9 @@ public class DissociatedPress {
     
     private static final Random rng = new Random();
     
-    private Map<String, String> followMap = new HashMap<String, String>();
-    private int maxPat, maxFollow;
+    private final Map<String, String> followMap = new HashMap<>();
+    private final int maxPat;
+    private final int maxFollow;
     private String pattern;
 
     public DissociatedPress() { this(" ", 7, 200); }
@@ -21,7 +22,9 @@ public class DissociatedPress {
      * @param maxFollow The maximum length for the follow string for any pattern.
      */
     public DissociatedPress(String pattern, int maxPat, int maxFollow) {
-        this.pattern = pattern; this.maxPat = maxPat; this.maxFollow = maxFollow;
+        this.pattern = pattern;
+        this.maxPat = maxPat;
+        this.maxFollow = maxFollow;
     }
     
     /**
@@ -69,7 +72,7 @@ public class DissociatedPress {
     }
     
     public void outputInfo() {
-        String characters = "";
+        StringBuilder characters = new StringBuilder();
         int[] patCount = new int[maxPat + 1];
         int[] followCount = new int[maxPat + 1];
         int[] saturated = new int[maxPat + 1];
@@ -78,7 +81,7 @@ public class DissociatedPress {
             int fl = followMap.get(pat).length();
             followCount[pat.length()] += fl;
             if(fl == maxFollow) { saturated[pat.length()]++; }
-            if(pat.length() == 1) { characters += pat; }
+            if(pat.length() == 1) { characters.append(pat); }
         }
         System.out.println("Characters found in data are:\n" + characters);
         System.out.println("\nLength\tTotal\tSaturated\tAverage");

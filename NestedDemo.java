@@ -3,7 +3,7 @@ public class NestedDemo {
     // Private variables, both static and instance, cannot be accessed from the
     // outside. However, the murderer is already inside the house...
     private static int count = 0;
-    private int x;
+    private final int x;
 
     public NestedDemo(int x) {
         // Local variable z is effectively final without us having to actually
@@ -16,7 +16,7 @@ public class NestedDemo {
         // of the behaviour of the outer class into a separate entity that is
         // not shown to the outside world.
         class Local { 
-            private int x;
+            private final int x;
             public Local() {
                 x = count++; // Methods can access all members of the outer class.
             }

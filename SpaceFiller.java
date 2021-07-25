@@ -24,8 +24,8 @@ public class SpaceFiller {
     }
 
     // An abstract factory that generates a random Area object.
-    public static interface AreaFactory {
-        public AreaInfo createArea(int w, int h, double r);
+    public interface AreaFactory {
+        AreaInfo createArea(int w, int h, double r);
     }
 
     // An implementation that generates circles.
@@ -54,8 +54,9 @@ public class SpaceFiller {
     
     // Another implementation that generates rotated regular n-gons.
     public static class RegularPolygonFactory implements AreaFactory {
-        private int n1, n2; // minimum and maximum possible value for n
-        public RegularPolygonFactory(int n) { this.n1 = this.n2 = n; }
+        private final int n1;
+        private final int n2; // minimum and maximum possible value for n
+
         public RegularPolygonFactory(int n1, int n2) { this.n1 = n1; this.n2 = n2; }
         public AreaInfo createArea(int w, int h, double r) {
             double cx = r + rng.nextDouble() * (w - 2 * r);
@@ -189,7 +190,6 @@ public class SpaceFiller {
             // Generate a random area using the provided generator.
             AreaInfo next = af.createArea(w, h, r);
             // Check that this area does not overlap previously added areas.
-            boolean isGood = true;
 
             if(overlapsSomething(next, areasCreated)) {
                 r = 0.999 * r; // Whenever failing, try slightly smaller radius next
@@ -215,8 +215,8 @@ public class SpaceFiller {
     }
 
     private static class ImageTimerPanel extends JPanel {
-        private javax.swing.Timer timer;
-        private Image img;
+        private final javax.swing.Timer timer;
+        private final Image img;
         public ImageTimerPanel(Image img) {
             this.setPreferredSize(new Dimension(img.getWidth(this), img.getHeight(this)));
             this.timer = new Timer(100, (ae) -> repaint());
@@ -238,40 +238,37 @@ public class SpaceFiller {
         final Image img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);    
         final ImageTimerPanel result = new ImageTimerPanel(img);
         result.setBorder(BorderFactory.createEtchedBorder());
-        new Thread(new Runnable() { // sneak preview of the concurrency lecture
-                public void run() { // the method executed by the new execution thread
-                    Graphics2D g2 = (Graphics2D)(img.getGraphics());
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    fillSpace(w, h, n, g2, ags);
-                    result.stopTimer();
-                }
-            }).start();
+        // sneak preview of the concurrency lecture
+        new Thread(() -> { // the method executed by the new execution thread
+            Graphics2D g2 = (Graphics2D)(img.getGraphics());
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            fillSpace(w, h, n, g2, ags);
+            result.stopTimer();
+        }).start();
         return result;
     }
 
     public static void createBigOne(int w, int h, int n, String filename) {
-        new Thread(new Runnable() { 
-                public void run() {
-                    BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-                    Graphics2D g2 = (Graphics2D)(img.getGraphics());
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    fillSpace(w, h, n, g2,
-                        new RegularPolygonFactory(3, 6),
-                        new CircleFactory(),
-                        new RingFactory(),
-                        new StarFactory(),
-                        new PlusFactory()
-                    );
-                    System.out.println("Completed calculating image: " + filename);
-                    try {
-                        ImageIO.write(img, "PNG", new java.io.File(filename + ".png"));
-                        ImageIO.write(img, "JPG", new java.io.File(filename + ".jpg"));
-                    }
-                    catch(Exception e) {
-                        System.out.println("Write failed: " + e);
-                    }
-                }
-            }).start();
+        new Thread(() -> {
+            BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2 = (Graphics2D)(img.getGraphics());
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            fillSpace(w, h, n, g2,
+                new RegularPolygonFactory(3, 6),
+                new CircleFactory(),
+                new RingFactory(),
+                new StarFactory(),
+                new PlusFactory()
+            );
+            System.out.println("Completed calculating image: " + filename);
+            try {
+                ImageIO.write(img, "PNG", new java.io.File(filename + ".png"));
+                ImageIO.write(img, "JPG", new java.io.File(filename + ".jpg"));
+            }
+            catch(Exception e) {
+                System.out.println("Write failed: " + e);
+            }
+        }).start();
     }
 
     public static void main(String[] args) {

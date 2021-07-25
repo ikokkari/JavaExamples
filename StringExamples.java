@@ -159,7 +159,6 @@ public class StringExamples {
      * Iterate the "count and say" method the given number of times.
      * @param s The {@code String} to start the iteration from.
      * @param n The number of times to iterate.
-     * @return The original {@code String} iterated {@code n} times.
      */
     public static void iterateCountAndSay(String s, int n) {
         System.out.println(s);
@@ -201,13 +200,12 @@ public class StringExamples {
     public static String wordReverser(String phrase) {
         int start = 0;
         boolean inWord = false;
-        String result ="";
+        StringBuilder result = new StringBuilder();
         for(int i = 0; i <= phrase.length(); i++) {
             if(i == phrase.length() || Character.isWhitespace(phrase.charAt(i))) {
                 if(inWord) {
                     inWord = false;
-                    result = phrase.substring(start, i) 
-                    + (result.length() == 0 ? "" : " ") + result;
+                    result.insert(0, new StringBuilder().append(phrase, start, i).append(result.length() == 0 ? "" : " ").toString());
                 }
             }
             else {
@@ -215,6 +213,6 @@ public class StringExamples {
                 inWord = true;
             }
         }
-        return result;
+        return result.toString();
     }
 }

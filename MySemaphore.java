@@ -6,8 +6,8 @@ import java.util.concurrent.locks.*;
 
 public class MySemaphore {
     private int permits;
-    private Lock mutex;
-    private Condition permitAvailable;
+    private final Lock mutex;
+    private final Condition permitAvailable;
     
     public MySemaphore(int permits, boolean fair) {
         this.permits = permits;
@@ -22,7 +22,6 @@ public class MySemaphore {
                 // Wait for one permit to become available.
                 permitAvailable.await();
             }
-            assert permits > 0;
             permits--;
         }
         // Ensure that mutex is unlocked even if an exception is thrown.

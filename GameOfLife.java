@@ -14,12 +14,13 @@ import java.awt.image.*;
 public class GameOfLife extends JPanel {
     
     private boolean[][] board, newBoard;
-    private int size;
-    private String birth, survival; // rules for birth and survival
-    private Timer t;
-    private BufferedImage img; // draw directly to BufferedImage for speed
-    private int aliveColour = Color.BLACK.getRGB(); // colour to draw living cells
-    private int deadColour = Color.WHITE.getRGB(); // colour to draw dead cells
+    private final int size;
+    private final String birth;
+    private final String survival; // rules for birth and survival
+    private final Timer t;
+    private final BufferedImage img; // draw directly to BufferedImage for speed
+    private final int aliveColour = Color.BLACK.getRGB(); // colour to draw living cells
+    private final int deadColour = Color.WHITE.getRGB(); // colour to draw dead cells
         
     /**
      * Constructor using the original Conway's Game of Life ruleset.
