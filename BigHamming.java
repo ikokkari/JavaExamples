@@ -29,8 +29,8 @@ public class BigHamming {
     public static BigInteger computeHamming(int n, boolean verbose) {
         long startTime = System.currentTimeMillis();
         // The elements of the search frontier
-        PriorityQueue<BigInteger> frontierQ = new PriorityQueue<BigInteger>();
-        HashSet<BigInteger> frontierS = new HashSet<BigInteger>();
+        PriorityQueue<BigInteger> frontierQ = new PriorityQueue<>();
+        HashSet<BigInteger> frontierS = new HashSet<>();
         
         // Initialize the frontier
         frontierQ.offer(BigInteger.ONE);
@@ -52,6 +52,7 @@ public class BigHamming {
             }
             // Generate the next three numbers to the search frontier
             for(BigInteger e : muls) {
+                assert curr != null;
                 BigInteger newB = curr.multiply(e);
                 if(!frontierS.contains(newB)) {
                     frontierQ.offer(newB);

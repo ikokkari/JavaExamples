@@ -13,17 +13,15 @@ import java.awt.image.*;
 public class ElementaryCellular extends JPanel {
 
     private static final int TOP = 35;
-    private boolean[][] state;
+    private final boolean[][] state;
     
     // All sorts of Swing components with different listeners.
-    private JSlider ruleSlider;
-    private JCheckBox fredkinBox;
-    private JLabel ruleLabel;
-    private JTextField seedTF;
+    private final JSlider ruleSlider;
+    private final JCheckBox fredkinBox;
+    private final JLabel ruleLabel;
     
     private int rule = 110;
-    private Random rng = new Random();
-    private BufferedImage img;
+    private final BufferedImage img;
     
     // Getters and setters for those who use this class as a tool,
     // instead of an interactive Swing component.
@@ -33,24 +31,13 @@ public class ElementaryCellular extends JPanel {
      */
     public BufferedImage getImage() { return img; }
     
-    /**
-     * Programmatically select the rule to use.
-     * @param rule The cellular automaton rule to use, between 0 to 255.
-     */
-    public void setRule(int rule) { this.rule = rule; }
-    
-    /**
-     * Programmatically set the random number generator to use.
-     * @param rng The random number generator to use.
-     */
-    public void setRandom(Random rng) { this.rng = rng; }
-    
     // Compute the value of the cell (x,y) based on its ancestors.
     private boolean evaluateCell(int x, int y, boolean fredkin) {
         int v = 0;
-        v += (x > 0 && state[x-1][y-1])? 4: 0;
-        v += (state[x][y-1])? 2: 0;
-        v += (x < state.length - 1 && state[x+1][y-1])? 1: 0;
+        int len = state.length;
+        v += state[(x + len - 1) % len][y-1] ? 4: 0;
+        v += state[x][y-1] ? 2: 0;
+        v += state[(x + 1) % len][y-1] ? 1: 0;
         boolean v1 = (rule & (1 << v)) != 0;        
         if(fredkin) { // Fredkin rule
             boolean v2 = (y > 1 && state[x][y-2]);
@@ -66,11 +53,15 @@ public class ElementaryCellular extends JPanel {
      */
     public void evaluateBoard() {
         boolean fredkin = fredkinBox.isSelected();
-        for(int y = 1; y < state[0].length; y++) {
+        for(int y = 0; y < state[0].length; y++) {
             for(int x = 0; x < state.length; x++) {
-               state[x][y] = evaluateCell(x, y, fredkin);
-               if(state[x][y]) { img.setRGB(x, y, 0); }
-               else { img.setRGB(x, y, Color.WHITE.getRGB()); }
+               state[x][y] = y > 0 ? evaluateCell(x, y, fredkin) : state[x][y];
+               int col = state[x][y] ? 0 : 0x00FFFFFF;
+               int xx = 2 * x, yy = 2 * y;
+               img.setRGB(xx, yy, col);
+               img.setRGB(xx + 1, yy, col);
+               img.setRGB(xx, yy + 1, col);
+               img.setRGB(xx + 1, yy + 1, col);
             }
         }
         repaint();
@@ -82,8 +73,8 @@ public class ElementaryCellular extends JPanel {
      * @param height, The height of the computed image, in pixels.
      */
     public ElementaryCellular(int width, int height) {
-        this.setPreferredSize(new Dimension(width, height + TOP));
-        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_BGR);
+        this.setPreferredSize(new Dimension(2 * width, 2 * height + TOP));
+        img = new BufferedImage(2 * width, 2 * height, BufferedImage.TYPE_INT_BGR);
         
         fredkinBox = new JCheckBox("Fredkin");
         this.add(fredkinBox);
@@ -94,20 +85,9 @@ public class ElementaryCellular extends JPanel {
         ruleSlider = new JSlider(0, 255);
         this.add(ruleSlider);
         ruleSlider.addChangeListener(new MySliderListener());
-        this.add(new JLabel("RNG seed:"));
-        seedTF = new JTextField(10);
-        this.add(seedTF);
-        seedTF.addActionListener(new MySeedListener());
         
         state = new boolean[width][height];
-        randomBoard(123);
-    }
-    
-    private void randomBoard(int seed) {
-        rng.setSeed(seed);
-        for(int x = 0; x < state.length; x++) {
-            state[x][0] = rng.nextBoolean();
-        }
+        state[width / 2][0] = true;
         evaluateBoard();
     }
     
@@ -134,19 +114,12 @@ public class ElementaryCellular extends JPanel {
         }
     }
     
-    private class MySeedListener implements ActionListener {
-        public void actionPerformed(ActionEvent ae) {
-            try {
-                randomBoard(Integer.parseInt(seedTF.getText()));
-            } catch(Exception e) { }
-        }
-    }
     
     public static void main(String[] args) {
         JFrame f = new JFrame("Elementary Cellular Automata");
         f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         f.setLayout(new FlowLayout());
-        f.add(new ElementaryCellular(800, 800));
+        f.add(new ElementaryCellular(500, 500));
         f.pack();
         f.setVisible(true);        
     }

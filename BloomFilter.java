@@ -8,15 +8,16 @@ import java.util.function.*;
 public class BloomFilter<E> {
 
     // Needed to randomly initialize the parameters as and bs.
-    private static Random rng = new Random();
+    private static final Random rng = new Random();
     
     // Family of multiplicative hash functions h(x) = (a*x + b) % M
-    private int[] as, bs;
-    private boolean[] bits;
+    private final int[] as;
+    private final int[] bs;
+    private final boolean[] bits;
     
     // Function to convert element into an integer. If null, the result of
     // calling the method hashCode() is used instead.
-    private Function<E, Integer> conv;
+    private final Function<E, Integer> conv;
     
     /**
      * Constructor to initialize the Bloom filter.
@@ -56,7 +57,7 @@ public class BloomFilter<E> {
     public boolean probablyContains(E elem) {
         int h = conv == null ? elem.hashCode() : conv.apply(elem);
         for(int i = 0; i < as.length; i++) {
-            if(bits[Math.abs(as[i] * h + bs[i]) % bits.length] == false) { 
+            if(!bits[Math.abs(as[i] * h + bs[i]) % bits.length]) {
                 return false; // negative answer is guaranteed correct 
             }
         }
@@ -65,15 +66,15 @@ public class BloomFilter<E> {
     
     // A utility method needed for the demonstration done in the main method.
     private static String createWord(Set<String> already) {
-        String word;
+        StringBuilder word;
         do {
-            word = "";
+            word = new StringBuilder();
             int len = rng.nextInt(10) + 2;
             for(int j = 0; j < len; j++) {
-                word += (char)('a' + rng.nextInt(26));
+                word.append((char) ('a' + rng.nextInt(26)));
             }
-        } while(already.contains(word));
-        return word;
+        } while(already.contains(word.toString()));
+        return word.toString();
     }
     
     // For amusement and demonstration purposes.
@@ -81,10 +82,10 @@ public class BloomFilter<E> {
         // Our Bloom filter uses 128 kilobytes (plus some spare change) to store
         // the bits, the size of element type E makes no difference to anything.
         // Also try out how changing k and m affects the false positive percentage.
-        BloomFilter<String> wordBloom = new BloomFilter<String>(20, 128 * 1024 * 8);
+        BloomFilter<String> wordBloom = new BloomFilter<>(20, 128 * 1024 * 8);
         // The hash set will take a lot more memory than 128 kb to store the same
         // strings in the 100% accurately retrievable and exact fashion.
-        HashSet<String> wordHash = new HashSet<String>();
+        HashSet<String> wordHash = new HashSet<>();
         
         // Populate both collections with the same set of randomly created "words".
         for(int i = 0; i < 50000; i++) {
@@ -94,7 +95,7 @@ public class BloomFilter<E> {
         }
         // Just to make sure that our filter works, check that it says yes to all added words.
         for(String word: wordHash) {
-            if(wordBloom.probablyContains(word) == false) {
+            if(!wordBloom.probablyContains(word)) {
                 System.out.println("Bloom filter implementation is broken!");
                 return;
             }

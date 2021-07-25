@@ -47,7 +47,7 @@ public class DLA {
     public static ArrayList<Particle> computeDLA(int n, int m, int points, double d) {
         // Seed the particles randomly. At all times, we have n + m particles so that
         // first n particles are frozen, and the rest are still moving.
-        ArrayList<Particle> particles = new ArrayList<Particle>();
+        ArrayList<Particle> particles = new ArrayList<>();
         for(int i = 0; i < n + m; i++) {
             particles.add(new Particle());
         }
@@ -88,7 +88,7 @@ public class DLA {
         }
         
         // Return the frozen particles as a separate sublist.
-        ArrayList<Particle> result = new ArrayList<Particle>(n);
+        ArrayList<Particle> result = new ArrayList<>(n);
         for(int i = 0; i < n; i++) {
             result.add(particles.get(i));
         }

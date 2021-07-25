@@ -50,13 +50,11 @@ public class ConditionsAndLoops {
         int med;
         if(a > b && a > c) {
             // Here we know a is the largest of the three.
-            if(b > c) { med = b; }
-            else { med = c; }
+            med = Math.max(b, c);
         }
         else if(a < b && a < c) {
             // Here we know that a is smallest of the three.
-            if(b > c) { med = c; }
-            else { med = b; }                
+            med = Math.min(b, c);
         }
         else {
             // If a is not the largest or the smallest, it is the median.
@@ -91,7 +89,7 @@ public class ConditionsAndLoops {
      * @return The letter grade as a string.
      */
     public static String convertRyersonLetterGrade(int p) {
-        String result = "";
+        String result;
         // Start by handling F and A levels as special cases
         if(p < 50) { result = "F"; }
         else if(p >= 90) { result = "A+"; }
