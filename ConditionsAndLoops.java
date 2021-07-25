@@ -257,7 +257,7 @@ public class ConditionsAndLoops {
     
     // A random number generator that we need in the next methods.
     // When no seed is given, system clock is used as the seed value.
-    private static Random rng = new Random();
+    private static final Random rng = new Random();
     
     /**
      * The classic number guessing game programming exercise. Keeps asking the
@@ -291,11 +291,11 @@ public class ConditionsAndLoops {
      */
     public static int numberGuessReverseRoles(int min, int max) {
         System.out.println("I am trying to guess your secret number.");
-        int upper = max, lower = min, total = 0, guess = -1;
+        int upper = max, lower = min, total = 0;
         Scanner s = new Scanner(System.in);
         outer:
         while(lower < upper) {
-            guess = (lower + upper) / 2;
+            int guess = (lower + upper) / 2;
             total++;
             System.out.print("I guess " + guess);
             System.out.println(". Is it (h)igh, (l)ow or (r)ight?");
@@ -332,7 +332,7 @@ public class ConditionsAndLoops {
         for(int i = 0; i < n; i++) {
             System.out.print(rng.nextInt() + " ");
         }
-        System.out.println("");
+        System.out.println();
     }
     
     // The class Random is good enough for toy games and such, but for
@@ -406,7 +406,7 @@ public class ConditionsAndLoops {
             for(int j = 0; j < cols; j++) {
                 System.out.print(ch);
             }
-            System.out.println(""); // just line break
+            System.out.println(); // just a line break
         }
     }
     
@@ -421,7 +421,7 @@ public class ConditionsAndLoops {
             for(int j = 0; j < i + 1; j++) { 
                 System.out.print(ch);
             }
-            System.out.println("");
+            System.out.println();
         }
     }
     

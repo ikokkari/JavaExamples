@@ -175,9 +175,9 @@ public class SpaceFiller {
      * @return A list that contains all the created shapes as AreaInfo objects.
      */
     public static java.util.List<AreaInfo> fillSpace(int w, int h, int n, Graphics2D g2, AreaFactory... afs) {
-        ArrayList<AreaInfo> areasCreated = new ArrayList<AreaInfo>(n);
+        ArrayList<AreaInfo> areasCreated = new ArrayList<>(n);
         overlapTestCount = heavyTestCount = 0;
-        double maxR = w / 30;
+        double maxR = w / 30.0;
         double r = maxR; // Current radius to try
         if(g2 != null) {
             g2.setColor(Color.WHITE); // fill the image with white
@@ -253,12 +253,12 @@ public class SpaceFiller {
             BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2 = (Graphics2D)(img.getGraphics());
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            fillSpace(w, h, n, g2,
-                new RegularPolygonFactory(3, 6),
-                new CircleFactory(),
-                new RingFactory(),
-                new StarFactory(),
-                new PlusFactory()
+            final java.util.List<AreaInfo> areaInfos = fillSpace(w, h, n, g2,
+                    new RegularPolygonFactory(3, 6),
+                    new CircleFactory(),
+                    new RingFactory(),
+                    new StarFactory(),
+                    new PlusFactory()
             );
             System.out.println("Completed calculating image: " + filename);
             try {

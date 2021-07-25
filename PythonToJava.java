@@ -208,8 +208,12 @@ public class PythonToJava {
     // The starting point of execution when a Java class is run as a standalone program.
     // Similar to spirit to Python construct if __name__ == '__main__':
     public static void main(String[] args) {
+
+        System.out.print("A grade of 65% becomes " + ryersonLetterGrade(65) + " as letters.\n");
+
         // Declaration of an array with immediate initialization.
         int[] a = {42, 8, 99, -5, 7, 13};
+
         // Java arrays are stupid and have no useful methods. That is why the
         // standard library has utility class Arrays for dealing with arrays.
         System.out.printf("Contents of array are initially %s.\n", Arrays.toString(a));

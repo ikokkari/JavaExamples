@@ -48,7 +48,7 @@ public class ShapePanel extends JPanel {
         for(int r = 0; r < 150; r += 10) {
             // If nothing else, let's admire the existence of the method "draw"
             // that can draw the outline of any Shape that anybody will ever think up.
-            g2.draw(new Rectangle2D.Double(100 - r/2,100 - r/2, r, r));
+            g2.draw(new Rectangle2D.Double(100 - r / 2.0,100 - r / 2.0, r, r));
         }
         
         // A rectangle with round corners.

@@ -21,10 +21,10 @@ public class Length {
     
     /**
      * Setter method for centimeters.
-     * @param newcm The new length in centimeters.
+     * @param new_cm The new length in centimeters.
      */
-    public void setCentimeters(double newcm) {
-        cm = newcm; // Assign parameter value to the data field inside the object. 
+    public void setCentimeters(double new_cm) {
+        cm = new_cm; // Assign parameter value to the data field inside the object.
     }
     
     /**
@@ -64,13 +64,13 @@ public class Length {
     
     /**
      * Constructor for this class.
-     * @param newcm The length in centimeters.
+     * @param new_cm The length in centimeters.
      */
-    public Length(double newcm) {
+    public Length(double new_cm) {
         // We can call existing methods in the class, instead of duplicating their code.
         // This does not make a big difference here, but might in a different class where
         // the field initialization requires some more complex computations and checks.
-        setCentimeters(newcm);
+        setCentimeters(new_cm);
     }
     
     /**
@@ -78,12 +78,12 @@ public class Length {
      * @return The length stored in this object in centimeters.
      */
     public String toString() {
-        return "A length of " + this.cm + " cm."; // String representation of this object.
+        return "Length of " + this.cm + " cm."; // String representation of this object.
     }
     
     /**
-     * A main method for demonstration purposes. This class is not really intended to be
-     * a standalone application, but to be used as a useful part of a larger application.
+     * A main method for demonstration purposes. This class is not really intended
+     * as a standalone application, but is to be used as a part of a larger system.
      */
     public static void main(String[] args) {
         Length a = new Length(20); // Create a new object with the operator new.

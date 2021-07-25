@@ -5,9 +5,8 @@ public class ShortHamming {
 
     private static final int HEAPSIZE = 10000000;
     
-    private static short[] heap = new short[HEAPSIZE * 3];
+    private static final short[] heap = new short[HEAPSIZE * 3];
     private static int size = 0;
-    private static int maxSize = 0;
     private static int expensiveCount = 0;
     
     private static final BigInteger two = BigInteger.valueOf(2);
@@ -83,6 +82,7 @@ public class ShortHamming {
     }
     
     public static BigInteger hamming(long n) {
+        int maxSize;
         size = maxSize = expensiveCount = 0;
         short a, b, c;
         long startTime = System.currentTimeMillis();

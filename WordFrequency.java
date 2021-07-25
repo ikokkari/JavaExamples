@@ -5,19 +5,20 @@ public class WordFrequency {
     
     // To run this program, change the FILENAME to some text file that you have.
     private static final String FILENAME = "warandpeace.txt";
-    
-    private static final String[][] replacements = {
-      { "doesn't", "does not" },
-      { "don't", "do not" },
-      { "you're", "you are" },
-      { "i'm", "i am" },
-      { "we're", "we are" },
-      { "they're", "they are" },
-      { "won't", "will not" },
-      { "can't", "can not" },
-      { "shan't", "shall not" },
-      { "shouldn't", "should not" },
-      { "mustn't", "must not" }
+
+    private static final String[][] replacements = new String[][]{
+            {"doesn't", "does not"},
+            {"don't", "do not"},
+            {"you're", "you are"},
+            {"i'm", "i am"},
+            {"we're", "we are"},
+            {"they're", "they are"},
+            {"won't", "will not"},
+            {"can't", "can not"},
+            {"shan't", "shall not"},
+            {"shouldn't", "should not"},
+            {"mustn't", "must not"},
+            {"aren't", "are not"}
     };
 
     public static Map<String, Integer> wordFrequencies(Scanner s) {

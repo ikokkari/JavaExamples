@@ -5,6 +5,7 @@
  * other internal state.
  * @author Ilkka Kokkarinen
  */
+
 public class Greeter {
 
     /**

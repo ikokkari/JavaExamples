@@ -9,8 +9,8 @@ import java.util.function.*;
 
 public class TakeUntil<T> implements Iterator<T> {
 
-    private Iterator<T> it; // The iterator used to access the stream elements.
-    private Predicate<T> pr; // The predicate used as stopping criterion.
+    private final Iterator<T> it; // The iterator used to access the stream elements.
+    private final Predicate<T> pr; // The predicate used as stopping criterion.
     private volatile T next; // The next element of the stream, cached inside this object.
     private volatile boolean terminated = false; // Has the stopping criterion has been reached?
     
@@ -30,10 +30,10 @@ public class TakeUntil<T> implements Iterator<T> {
         // Otherwise, ask the element from the iterator...
         if(it.hasNext()) {
             next = it.next();
-            // ... and check whether that element satisfies the stopping criterion.
-            if(terminated = pr.test(next)) { return false; }
+            // Answer depends on whether next element satisfies stopping criterion.
+            return !pr.test(next);
         }
-        return true;
+        return false;
     }
     
     // Return the next element of the stream. 
@@ -49,7 +49,7 @@ public class TakeUntil<T> implements Iterator<T> {
     // Utility method to use this class to convert any Stream<T> into another Stream<T>
     // that terminates at the first element that satisfies the given predicate.
     public static <T> Stream<T> stream(Stream<T> s, Predicate<T> pred) {
-        TakeUntil<T> tu = new TakeUntil<T>(s, pred);
+        TakeUntil<T> tu = new TakeUntil<>(s, pred);
         Spliterator<T> split = Spliterators.spliterator(tu, Integer.MAX_VALUE, Spliterator.ORDERED);
         return StreamSupport.stream(split, false);
     }

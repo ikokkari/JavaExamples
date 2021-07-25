@@ -10,18 +10,18 @@ import java.math.BigInteger;
 public class BigPrimes {
 
     // Interface for the continuation that each PrimeFinder task calls after completion.
-    private static interface FinalCall {
-        public void finish(BigInteger prime) throws InterruptedException;
+    private interface FinalCall {
+        void finish(BigInteger prime) throws InterruptedException;
     }
 
     /* A class representing the worker task of finding one random prime. */
     private static class PrimeFinder implements Callable<BigInteger> {
-        private static AtomicInteger count = new AtomicInteger(0);
-        private int id; // The numerical ID of this task.
-        private int bits; // How many bits the prime number should contain.
-        private FinalCall done; // Continuation to execute after finding the prime.
+        private static final AtomicInteger ticket_machine = new AtomicInteger(0);
+        private final int id; // The numerical ID of this task.
+        private final int bits; // How many bits the prime number should contain.
+        private final FinalCall done; // Continuation to execute after finding the prime.
         public PrimeFinder(int bits, FinalCall done) {
-            this.id = count.getAndIncrement();
+            this.id = ticket_machine.getAndIncrement();
             this.bits = bits;
             this.done = done;
         }
@@ -43,13 +43,13 @@ public class BigPrimes {
     }
 
     // The ExecutorService to manage the PrimeFinder tasks.
-    private static ExecutorService es = Executors.newFixedThreadPool(5);
+    private static final ExecutorService es = Executors.newFixedThreadPool(5);
 
     // Template method superclass for finding n random primes of given bit length.
     public abstract static class PrimeCollector {
         public List<BigInteger> findPrimes(int n, int bits) throws InterruptedException {
             // The list of prime numbers collected.
-            ArrayList<BigInteger> result = new ArrayList<BigInteger>();
+            ArrayList<BigInteger> result = new ArrayList<>();
             // Pass the buck to the template method to do the actual work.
             collectPrimes(n, bits, result);
             // We are confident about this, putting our head on the chopping block.
@@ -90,7 +90,7 @@ public class BigPrimes {
         protected void collectPrimes(int n, int bits, List<BigInteger> result)
         throws InterruptedException {
             // The list of Future tickets for our submitted PrimeFinder tasks.
-            ArrayList<Future<BigInteger>> futures = new ArrayList<Future<BigInteger>>();        
+            ArrayList<Future<BigInteger>> futures = new ArrayList<>();
             // Submit the individual tasks and store the Future tickets into the list.
             for(int i = 0; i < n; i++) {
                 futures.add(es.submit(new PrimeFinder(bits))); // (no continuation here)
@@ -99,7 +99,7 @@ public class BigPrimes {
             for(Future<BigInteger> f: futures) {
                 try {
                     result.add(f.get()); // Blocks until the task is complete.
-                } catch(ExecutionException e) { } // Hey, it could happen...
+                } catch(ExecutionException ignored) { }
             }
         }
     }
@@ -125,10 +125,10 @@ public class BigPrimes {
         protected void collectPrimes(int n, int bits, List<BigInteger> result)
         throws InterruptedException {
             // The blocking queue in which the workers add the prime numbers they find. 
-            BlockingQueue<BigInteger> primes = new ArrayBlockingQueue<BigInteger>(n);
+            BlockingQueue<BigInteger> primes = new ArrayBlockingQueue<>(n);
             // For BlockingQueue, put and take methods are thread-safe.
             for(int i = 0; i < n; i++) {
-                es.submit(new PrimeFinder(bits, prime -> primes.put(prime)));
+                es.submit(new PrimeFinder(bits, primes::put));
             }
             // The blocking queue will block until next prime becomes available.
             for(int i = 0; i < n; i++) {

@@ -62,8 +62,7 @@ public class Pair<T, U> {
         try(Scanner sc = new Scanner(new File("warandpeace.txt"))) {        
             while(sc.hasNextLine()) {
                 for(String word: sc.nextLine().split(" ")) {
-                    Pair<String, Integer> p = new Pair<>(word, wordNo++);
-                    seen.add(p.hashCode());
+                    seen.add(new Pair<>(word, wordNo++).hashCode());
                 }
             }
         }

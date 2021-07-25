@@ -13,7 +13,7 @@ public class ContinuedFraction implements Iterator<Fraction> {
     // The continued fraction so far simplified to its lowest form.
     private Fraction state = new Fraction(1);
     // The iterator that produces the terms of this continued fraction.
-    private Iterator<Integer> it;
+    private final Iterator<Integer> it;
     
     public ContinuedFraction(Iterator<Integer> it) { this.it = it; }
     
@@ -52,7 +52,8 @@ public class ContinuedFraction implements Iterator<Fraction> {
         
         // An iterator that produces a series of count copies of value v.
         class Repeat implements Iterator<Integer> {
-            private int count, val;
+            private int count;
+            private final int val;
             public Repeat(int val, int count) { this.val = val; this.count = count; }
             public boolean hasNext() { return count > 0; }
             public Integer next() { count--; return 1; }

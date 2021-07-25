@@ -86,7 +86,7 @@ public class Sliders extends JPanel {
             this.thread = new Thread(() -> { // Runnable object as a lambda.
                 try {
                     while(running) {
-                        Thread.sleep(20); // Act at 50 fps.
+                        Thread.sleep(20);
                         if(moving) {                            
                             if(t <= 1.0) { // Movement is still incomplete.
                                 // Cosine interpolation to smooth the movement.
