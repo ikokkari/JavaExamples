@@ -47,8 +47,8 @@ public class NatSet {
                 // Update the shifting statistics.
                 shiftCount += pos;
                 // Copy the rest of the array to start from the beginning.
-                for(int i = pos; i < data.length; i++) {
-                    data[i - pos] = data[i];
+                if (data.length - pos >= 0) {
+                    System.arraycopy(data, pos, data, 0, data.length - pos);
                 }
                 // Update the position of the sliding window.
                 start += pos;
@@ -86,17 +86,19 @@ public class NatSet {
         // You can try on your computer how high you can make i go before
         // running out of heap memory needed by the data array.
         for(int i = 0; i < 100_000_000; i++) {
+            // Hare moves in every round.
             h += rng1.nextInt(10) + 1;
             s.add(h);
+            // Tortoise moves in every other round. 
             if(i % 2 == 1) {
                 int next = t + rng2.nextInt(10) + 1;
                 t++;
                 while(t < next) {
-                    assert !s.contains(t) : t + " is in the set";
+                    assert !s.contains(t) : t + " should not be in the set";
                     s.add(t);
                     t++;
                 }
-                assert s.contains(t) : t + " is not in the set";
+                assert s.contains(t) : t + " should be in the set";
             }
         }
         System.out.println("Ended with hare at " + h + " and tortoise at " + t);
