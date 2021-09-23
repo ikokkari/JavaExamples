@@ -153,7 +153,7 @@ public class FloydSteinberg {
     
     public static void main(String[] args) {
         Image coffee = Toolkit.getDefaultToolkit().getImage("coffee.jpg");
-        coffee = coffee.getScaledInstance(400, 250, Image.SCALE_SMOOTH);
+        coffee = coffee.getScaledInstance(600, 375, Image.SCALE_SMOOTH);
         MediaTracker m = new MediaTracker(new JPanel());
         m.addImage(coffee, 0);
         try { m.waitForAll(); } catch(InterruptedException ignored) { }
@@ -176,11 +176,12 @@ public class FloydSteinberg {
             { Color.CYAN, Color.GREEN, Color.PINK },
             { Color.BLACK, Color.RED, Color.BLUE, Color.GREEN },
             { Color.BLACK, Color.WHITE },
-            { Color.BLACK, new Color(128,128,128), new Color(192, 192, 192), Color.WHITE }
+            { Color.BLACK, new Color(64, 64, 64), new Color(128,128,128),
+              new Color(192, 192, 192), Color.WHITE }
         };
         String[] toolTips = {
             "Blue, white, black, green", "Red, yellow, blue", "Cyan, green, pink",
-            "Primary colors", "Binary black and white", "4 levels of gray"
+            "Primary colors", "Binary black and white", "5 levels of gray"
         };
         for(int i = 0; i < palettes.length; i++) {
             f.add(createPanel(img, palettes[i], toolTips[i]));
