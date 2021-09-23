@@ -13,11 +13,15 @@ import java.awt.image.*;
 
 public class GameOfLife extends JPanel {
     
+    private static final int PIXSIZE = 3;
+    private static final int MARGIN = 40;
+    private static final Random rng = new Random();
+    
     private boolean[][] board, newBoard;
-    private final int size;
-    private final String birth;
-    private final String survival; // rules for birth and survival
-    private final Timer t;
+    private final int size; // size of square grid as tiles 
+    private final String birth; // rules for birth and survival
+    private final String survival; 
+    private final Timer t; // animation timer
     private final BufferedImage img; // draw directly to BufferedImage for speed
     private final int aliveColour = Color.BLACK.getRGB(); // colour to draw living cells
     private final int deadColour = Color.WHITE.getRGB(); // colour to draw dead cells
@@ -27,10 +31,7 @@ public class GameOfLife extends JPanel {
      * @param size The size of the automaton, measured in cells.
      */
     public GameOfLife(int size) { this(size, "3", "23", 0.30); }
-    
-    private static final int MARGIN = 100;
-    private static final Random rng = new Random();
-    
+       
     /**
      * Constructor for generalized variants of Conway's Game of Life.
      * @param size The size of the automaton, measured in cells.
@@ -42,8 +43,9 @@ public class GameOfLife extends JPanel {
         this.size = size;
         this.birth = birth;
         this.survival = survival;
-        this.img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
-        this.setPreferredSize(new Dimension(size, size));
+        int pix = size * PIXSIZE;
+        this.img = new BufferedImage(pix, pix, BufferedImage.TYPE_INT_RGB);
+        this.setPreferredSize(new Dimension(pix, pix));
         this.setBorder(BorderFactory.createRaisedBevelBorder());
         board = new boolean[size][size]; // initialize the board arrays
         newBoard = new boolean[size][size];
@@ -93,8 +95,14 @@ public class GameOfLife extends JPanel {
                       (board[x][y] && survival.indexOf('0' + sum) > -1) ||
                       (!board[x][y] && birth.indexOf('0' + sum) > -1);
                       
-                    // set the pixel (x,y) of the image according to the new state of cell
-                    img.setRGB(x, y, newBoard[x][y] ? aliveColour: deadColour);
+                    // set the pixel of the image according to the new state of cell
+                    for(int px = 0; px < PIXSIZE; px++) {
+                        for(int py = 0; py < PIXSIZE; py++) {
+                            img.setRGB(x * PIXSIZE + px, y * PIXSIZE + py,
+                            newBoard[x][y] ? aliveColour: deadColour);
+                        }
+                    }
+                    
                 }
             }
             boolean[][] tmp = board; // swap the references to the two board arrays
@@ -113,7 +121,7 @@ public class GameOfLife extends JPanel {
         g.drawImage(img, 0, 0, this);
     }
     
-    private static final int SIZE = 700;
+    private static final int SIZE = 150;
     private static int idx = 0;
     
     /**
@@ -121,7 +129,7 @@ public class GameOfLife extends JPanel {
      * @param title The title of the frame.
      * @param g The {@code GameOfLife} instance to display in this frame.
      */
-    public static void createFrame(String title, final GameOfLife g) {
+    public static void createFrame(String title, final GameOfLife g, int x, int y) {
         final JFrame f = new JFrame(title);
         f.add(g);
         f.addWindowListener(new WindowAdapter() {
@@ -130,15 +138,22 @@ public class GameOfLife extends JPanel {
                 f.dispose(); // and now we can safely dispose of the frame
             }
         });
-        f.pack(); f.setLocation(idx * (SIZE - 100), 100 + 50 * idx);
+        f.pack();
+        int p = PIXSIZE * SIZE - 100;
+        f.setLocation(x, y);
         ++idx;
         f.setVisible(true);
     }
     
     public static void main(String[] args) {
         // "Three or more, use a for!"
-        createFrame("Conway's Game of Life", new GameOfLife(SIZE, "3", "23", 0.20));
-        createFrame("Day & Night", new GameOfLife(SIZE, "3678", "34678", 0.40));
-        createFrame("Mazectric", new GameOfLife(SIZE, "3", "1234", 0.05));
+        createFrame("Conway's Game of Life", new GameOfLife(SIZE, "3", "23", 0.20), 100, 100);
+        createFrame("Day & Night", new GameOfLife(SIZE, "3678", "34678", 0.40), 100, 600);
+        createFrame("Mazectric", new GameOfLife(SIZE, "3", "1234", 0.05), 600, 100);
+        // The survival of diamoeba depends greatly on initial filling probability.
+        createFrame("Diamoeba", new GameOfLife(SIZE, "35678", "5678", 0.50), 600, 600);
+        createFrame("Serviettes", new GameOfLife(SIZE, "234", "", 0.03), 1100, 100);
+        createFrame("Gnarl", new GameOfLife(SIZE, "1", "1", 0.01), 1100, 600);
+        // Plenty more available at http://www.mirekw.com/ca/rullex_life.html
     }
 }
