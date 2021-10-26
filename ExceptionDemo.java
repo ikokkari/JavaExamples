@@ -55,6 +55,17 @@ public class ExceptionDemo {
         }
     }
     
+    // What does this method throw?
+    public static void throwDemo() throws IOException {
+        try {
+            // throw "Hello world"; // can't do this, String is not Throwable
+            throw new IllegalStateException("first");
+        }
+        finally {
+            throw new IOException("second");
+        }
+    }
+    
     // Does this method terminate, or is it an infinite loop? Who will win
     // this game of tug-of-war between these two opposing forces?
     public static void whileDemo() {
