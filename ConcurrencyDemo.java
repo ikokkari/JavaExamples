@@ -7,10 +7,10 @@ public class ConcurrencyDemo {
     // simply first waits a random time and then terminates.
       
     private static class SimpleWaiter implements Runnable {
-        private static final AtomicInteger ticket_machine = new AtomicInteger(0);
+        private static final AtomicInteger TICKET_MACHINE = new AtomicInteger(0);
         private final int id;
         public SimpleWaiter() {
-            this.id = ticket_machine.incrementAndGet();
+            this.id = TICKET_MACHINE.incrementAndGet();
         }
         @Override public void run() {
             System.out.println("Starting waiter #" + id + ".");
@@ -23,10 +23,12 @@ public class ConcurrencyDemo {
         }
     }
     
-    // Demonstrate how to create and launch new background Threads.
+    // Demonstrate how to create and launch new threads. Each SimpleWaiter task is
+    // executed in its own separate thread.
     public static void simpleThreadDemo(int n) {
         for(int i = 0; i < n; i++) {
             Thread t = new Thread(new SimpleWaiter());
+            // Some settings could be made here before starting the thread.
             t.start();
         }
         System.out.println("All waiters created, returning from method.");
@@ -34,7 +36,7 @@ public class ConcurrencyDemo {
 
     // The previous example implemented using an ExecutorService instead of explicitly
     // creating threads. See what happens if you set this up with different argument.
-    private static final ExecutorService es = Executors.newFixedThreadPool(5);
+    private static final ExecutorService es = Executors.newFixedThreadPool(3);
     
     public static void simpleExecutorDemo(int n) { // Try n = 2, 5, 10.
         for(int i = 0; i < n; i++) {
@@ -42,5 +44,10 @@ public class ConcurrencyDemo {
         }
         System.out.println("All waiters submitted, returning from method.");
     }
-    
+
+    public static void main(String[] args) {
+        simpleThreadDemo(20);
+        // simpleExecutorDemo(20);
+    }
+
 }
