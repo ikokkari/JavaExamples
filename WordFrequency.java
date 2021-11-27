@@ -1,5 +1,11 @@
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 public class WordFrequency {
     
@@ -94,8 +100,7 @@ public class WordFrequency {
             public int compare(String word1, String word2) {
                 int f2 = freqs.get(word2);
                 int f1 = freqs.get(word1);
-                if(f2 != f1) { return f2 - f1; }
-                return word2.compareTo(word1);
+                return f2 != f1 ? (f1 < f2 ? +1 : -1) : word2.compareTo(word1);
             }
         }
         

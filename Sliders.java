@@ -1,9 +1,18 @@
-import java.util.*;
-import java.util.concurrent.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.awt.geom.*;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.geom.Rectangle2D;
+import java.util.Random;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 // A demonstration of semaphores in multithreaded programming in Java. This
 // component animates a bunch of sliders, each controlled by a separate thread,

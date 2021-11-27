@@ -1,5 +1,5 @@
-import java.math.*; // for BigInteger
-import java.util.*; // for Random
+import java.math.BigInteger;
+import java.util.Random;
 
 /**
  * Additional examples of {@code String} for the course CCPS109.

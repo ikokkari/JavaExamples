@@ -1,5 +1,5 @@
-import java.util.*; // for Random
-import java.security.*; // for SecureRandom
+import java.security.SecureRandom;
+import java.util.Random;
 
 /**
  * Additional examples of conditions and loops for the course CCPS 109.

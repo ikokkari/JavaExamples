@@ -1,6 +1,13 @@
-import java.awt.*;
-import java.awt.image.*;
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 /**
  * Produces a fixed-palette colour image from original image using Floyd-Steinberg

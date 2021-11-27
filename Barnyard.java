@@ -1,4 +1,5 @@
-import java.util.*;
+import java.util.Arrays;
+import java.util.Random;
 
 public class Barnyard {
 
@@ -21,12 +22,14 @@ public class Barnyard {
             count++;
         }
         
+        // Methods we wish to impose on all future subclasses, but cannot at this level
+        // be given a meaningful implementation, are declared abstract.
         public abstract String getSound();
         public abstract String getSpecies();
         
         // All species of animals have same implementation of toString.
         @Override final public String toString() {
-            return getSpecies() + " that says " + getSound();
+            return this.getSpecies() + " that says " + this.getSound();
         }
     }
     
@@ -51,7 +54,7 @@ public class Barnyard {
             System.out.println("Default constructor of Bird");
         }
         
-        // New methods that don't exist in the superclass can be defined.
+        // Define new subclass methods that don't exist in the superclass.
         public abstract void fly();
     }
     
@@ -120,14 +123,20 @@ public class Barnyard {
             System.out.println("Constructor of MirroredAnimal with " + client);
         }
         @Override public String getSound() { 
+            // Canonical way to reverse a String in Java is through a StringBuilder.
             return new StringBuilder(client.getSound()).reverse().toString();
         }
         @Override public String getSpecies() {
             return "mirrored " + client.getSpecies();
         }
     }
+
+    // To avoid code duplication in decorators, it might be a good idea to define an
+    // abstract superclass AnimalDecorator to take care of this boilerplate. The
+    // subclasses would then override precisely those methods for which that type
+    // of decorator provides some additional service.
     
-    // For demonstration and educational purposes.
+    // A main method for demonstration and educational purposes.
     public static void main(String[] args) {
         Animal a1 = new Goose();
         System.out.println("Our first animal is " + a1 + ".");

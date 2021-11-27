@@ -1,13 +1,19 @@
-// Java 5 came out in 2005. Its features are no longer new, but part of language.
-
 // Ordinary imports
-import java.util.*;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
-import java.lang.annotation.*;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 // Static imports
-import static java.lang.System.*;
-import static java.lang.Math.*;
+import static java.lang.Math.sqrt;
+import static java.lang.System.out;
+
+// Java 5 came out in 2005. Its features are no longer new, but part of the
+// language. Pretty soon I will have students who are younger than Java 5.
 
 public class Java5Demo {
     
@@ -15,10 +21,10 @@ public class Java5Demo {
     // Annotations can themselves be annotated with meta-annotations,
     // especially to define their retention policy and target.
     @Retention(RetentionPolicy.RUNTIME) // keep for runtime
-    @Target(ElementType.TYPE) // can be applied to classes and other types
+    @Target(ElementType.TYPE) // May be applied to classes and other types
     @interface Author {
         String name();
-        int year() default 2014;
+        int year() default 2014; // How the time goes by...
     }
     
     // Let us use our new annotation type on a little class.
@@ -38,15 +44,28 @@ public class Java5Demo {
     
     // Boxing and unboxing
     public static void boxingDemo() {
-        Integer a = 42; // boxing
-        int b = new Integer(9999); // unboxing
-        System.out.println(a + b); // conversions take place in arithmetic
-        Integer c = 42;
-        Integer d = 9999;
-        Integer e = new Integer(9999);
-        if(a.equals(c)) { out.println("a == c"); } // true
-        if(b == d) { out.println("b == d"); } // true (primitive == wrapper)
-        if(d.equals(e)) { out.println("d == e"); } // false (can you explain why?)
+        Integer a = 42;     // Boxing primitive to wrapper, small enough to be in cache.
+        Integer b = 42;     // Boxing primitive to wrapper, reuses 42 from cache.
+        int c = 42;         // Primitive int value.
+        assert a == c;      // Primitive vs. wrapper, unbox and compare values.
+        assert a == b;      // Wrapper vs. wrapper, memory address comparison.
+        assert a.equals(b); // Wrapper vs. wrapper, object content comparison.
+        
+        Integer d = 84;     // Boxing primitive to wrapper, small enough to be in cache.
+        Integer e = new Integer(84); // new always creates a new object, no matter what
+        assert d != e;      // Memory address comparison, guaranteed different here.
+        assert d.equals(e); // Wrapper vs. wrapper, object content comparison.
+        assert a + b == e;  // Arithmetic automatically unboxes before the operation.
+        assert 2 * a == e;
+        assert e / 2 == b;
+        assert a < e;       // As do the order comparisons.
+        
+        Integer f = 9999;   // Boxing primitive to wrapper, outside the cache range.
+        Integer g = 9999;   // Boxing primitive to wrapper, outside the cache range.
+        assert f != g;      // Memory address comparison, guaranteed different here.
+        assert f.equals(g); // Wrapper vs. wrapper, object content comparison.
+        
+        System.out.println("Sleep well. Integers still work the way they are supposed to.");
     }
     
     // Varargs

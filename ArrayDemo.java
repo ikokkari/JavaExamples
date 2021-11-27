@@ -32,7 +32,9 @@ public class ArrayDemo {
         }
         // When you just read all elements, you can "for-each" through them.
         double sum = 0;
-        for(double e: a) { sum += e; }
+        for(double e: a) {
+            sum += e;
+        }
         // You can still be old school and loop through the indices, using
         // the index then to access the element inside the loop body.
         double sum2 = 0;
@@ -46,7 +48,7 @@ public class ArrayDemo {
         // Of course, this method doesn't know about DecimalFormat.
         
         // Arrays, like all objects in Java, get eventually garbage collected
-        // once they become inaccessible from your program variables.
+        // once they become inaccessible from your live variables.
     }
     
     /**

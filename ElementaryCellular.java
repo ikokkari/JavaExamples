@@ -1,13 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
 import javax.swing.event.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
 
 /**
  * A Swing component to display one-dimensional cellular automata, with
- * time flowing to the vertical direction.
+ * time flowing in the vertical direction as is customary with these.
  * @author Ilkka Kokkarinen
  */
 public class ElementaryCellular extends JPanel {

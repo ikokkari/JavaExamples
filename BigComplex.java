@@ -1,4 +1,8 @@
-import java.math.*;
+import java.math.BigDecimal;
+import java.math.MathContext;
+
+// Complex number arithmetic using BigDecimal components for real and imaginary
+// parts of the number.
 
 public class BigComplex {
 

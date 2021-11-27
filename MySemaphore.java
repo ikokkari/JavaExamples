@@ -1,4 +1,6 @@
-import java.util.concurrent.locks.*;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 // A standard exercise of Concurrency Intro is to prove that Semaphores are
 // equivalent to Locks and Condition variables in power, shown by implementing

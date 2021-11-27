@@ -1,6 +1,9 @@
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Scanner;
-import java.text.DecimalFormat; 
-import java.math.*;
+import java.text.DecimalFormat;
 
 /**
  * A class demonstrating various aspects of primitive types and Strings in Java.

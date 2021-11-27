@@ -1,11 +1,11 @@
-/* 
- * Overloading is resolved at the compile time, based on declared parameter types.
- * Overriding is resolved at runtime, based on the type of the object "this".
- * This example class demonstrates this crucial difference between these two.
- */
-
 public class Overload {
-   
+
+    /*
+     * Overloading is resolved at the compile time, based on declared parameter types.
+     * Overriding is resolved at runtime, based on the type of the object "this".
+     * This example class demonstrates this crucial difference between these two.
+     */
+
     // Just that we have an inheritance hierarchy to use as a parameter type.
     private static class Bird {}
     private static class Hawk extends Bird {}

@@ -1,4 +1,4 @@
-import java.math.*; // for BigInteger and BigDecimal   
+import java.math.BigInteger;
 
 /** The class Fraction implements the integer fractions and some
  *  of their arithmetic and comparison operations. The fractions
@@ -113,7 +113,7 @@ public class Fraction implements Comparable<Fraction> {
      * @param o The other fraction of the equality comparison.
      * @return {@code true} if the fractions are equal, {@code false} otherwise.
      */
-    public boolean equals(Object o) {
+    @Override public boolean equals(Object o) {
         if(o instanceof Fraction) { // instanceof pattern variable
             // downcast to correct subtype
             Fraction other = (Fraction)o;
@@ -133,7 +133,7 @@ public class Fraction implements Comparable<Fraction> {
      * Python's power function is **, with ^ in the same "xor" role as here.
      * @return The hash code of this Fraction.
      */
-    public int hashCode() {
+    @Override public int hashCode() {
         int hd = den.hashCode();
         int hn = num.hashCode();
         // As not to hash a/b and b/a to the same value, do some bitwise
@@ -148,7 +148,7 @@ public class Fraction implements Comparable<Fraction> {
      * @param other The other fraction of the order comparison.
      * @return -1, 0 or +1 depending on the result of the comparison.
      */
-    public int compareTo(Fraction other) {
+    @Override public int compareTo(Fraction other) {
         // We just subtract the fractions and return the sign of result.
         Fraction diff = this.subtract(other);
         return diff.getNum().signum();  

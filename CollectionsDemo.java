@@ -1,5 +1,12 @@
-import java.util.*;
-import java.math.*; // for BigInteger
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Random;
+import java.util.TreeSet;
 
 public class CollectionsDemo {
     
@@ -7,34 +14,34 @@ public class CollectionsDemo {
     
     @SuppressWarnings("unchecked")
     public static void basicOperations() {
-        TreeSet<Integer> tsd = new TreeSet<>();
+        TreeSet<Integer> tsi1 = new TreeSet<>();
         
         // First, the dynamic set operations add, remove and contains.
-        tsd.add(42); tsd.add(99); tsd.add(99);
-        System.out.println("Our example treeset: " + tsd); // decent toString() 
+        tsi1.add(42); tsi1.add(99); tsi1.add(99);
+        System.out.println("Our example treeset: " + tsi1); // decent toString()
         
         // Dumb way to do the following. Used here only for demonstration purposes.
         System.out.println("Looking for elements in the treeset.");
         for(int i = 0; i < 100; i++) {
-            if(tsd.contains(i)) { System.out.println("Element " + i + " was found"); }
+            if(tsi1.contains(i)) { System.out.println("Element " + i + " was found"); }
         }
-        tsd.remove(42);
+        tsi1.remove(42);
         System.out.println("Looking for elements in the treeset again.");
         for(int i = 0; i < 100; i++) {
-            if(tsd.contains(i)) { System.out.println("Element " + i + " was found"); }
+            if(tsi1.contains(i)) { System.out.println("Element " + i + " was found"); }
         }
         
         // Two collections are equal if they are of same general type with equal elements.
-        TreeSet<Integer> tsd2 = new TreeSet<>();
-        tsd2.add(99);
+        TreeSet<Integer> tsi2 = new TreeSet<>();
+        tsi2.add(99);
         HashSet<Integer> hs = new HashSet<>();
         hs.add(99);
         ArrayList<Integer> al = new ArrayList<>();
         al.add(99);
-        System.out.println("tsd equals tsd2: " + tsd.equals(tsd2)); // true
-        System.out.println("tsd equals hs: " + tsd.equals(hs)); // true, hs is a Set
-        System.out.println("tsd equals al: " + tsd.equals(al)); // false, al is a List
-        System.out.println("tsd equals \"Hello\": " + tsd.equals("Hello")); // false, for sure
+        System.out.println("tsi1 equals tsi2: " + tsi1.equals(tsi2)); // true
+        System.out.println("tsi1 equals hs: " + tsi1.equals(hs)); // true, hs is a Set
+        System.out.println("tsi1 equals al: " + tsi1.equals(al)); // false, al is a List
+        System.out.println("tsi1 equals \"Hello\": " + tsi1.equals("Hello")); // false, for sure
         
         // Collections contain references, not actual objects.
         ArrayList<Object> ao = new ArrayList<Object>();
@@ -48,8 +55,10 @@ public class CollectionsDemo {
     
     // The Collections utility class contains many useful polymorphic algorithms.
     public static void algorithmsDemo() {
-        ArrayList<Integer> ai = new ArrayList<Integer>();
-        for(int i = 0; i < 10; i++) { ai.add(rng.nextInt(1000)); }
+        ArrayList<Integer> ai = new ArrayList<>();
+        for(int i = 0; i < 10; i++) {
+            ai.add(rng.nextInt(1000));
+        }
         System.out.println("Initial arraylist:");
         System.out.println(ai);
         System.out.println("The largest element is " + Collections.max(ai) + ".");
@@ -140,7 +149,7 @@ public class CollectionsDemo {
         }
     }
     
-    public static void FibonacciDemo() {
+    public static void fibonacciDemo() {
         Iterator<BigInteger> it = new DuplicatingIterator<>(new FibonacciIterator(), 3);
         for(int i = 0; i < 50; i++) {
             System.out.println(it.next());
@@ -213,17 +222,4 @@ public class CollectionsDemo {
         System.out.println(ai);
         System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
     }
-    
-    // Since BlueJ method parameter dialog is so painful for complex types, here is how you
-    // would write a test method to leisurely create the argument given to methods that
-    // expect parameters of such complex types.
-    
-    /*
-    public static void testSum() {
-        ArrayList<Integer> al = new ArrayList<Integer>();
-        al.add(42); al.add(99); al.add(17);
-        System.out.println(sum(al));
-    }
-    */
-    
 }

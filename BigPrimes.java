@@ -1,7 +1,18 @@
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*; // for AtomicInteger
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // Demonstrate the java.util.concurrent utility classes Semaphore, Future, BlockingQueue
 // and CountDownLatch for concurrency control, with demonstration worker task of finding
@@ -25,13 +36,12 @@ public class BigPrimes {
             this.bits = bits;
             this.done = done;
         }
-
         public PrimeFinder(int bits) {
             this(bits, null);
         }
-
         public BigInteger call() throws InterruptedException {
             System.out.println("Starting PrimeFinder #" + id + ".");
+            // The method BigInteger.probablePrime does all the heavy lifting for us.
             BigInteger prime = BigInteger.probablePrime(bits, ThreadLocalRandom.current());
             System.out.println("PrimeFinder #" + id + " found prime: " + primeString(prime));            
             // The work is completed, so call the continuation given to this task.
@@ -57,7 +67,7 @@ public class BigPrimes {
             // The result should contain n random prime numbers.
             return result;
         }
-        // Subclasses override this method to find the n primes in different ways.
+        // Subclasses override this template method to find the n primes in different ways.
         protected abstract void collectPrimes(int n, int bits, List<BigInteger> result)
         throws InterruptedException; 
     }

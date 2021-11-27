@@ -1,7 +1,11 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.image.*;
-import java.util.function.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.util.function.BiPredicate;
 
 // First demonstration of lambdas in Java 8.
 

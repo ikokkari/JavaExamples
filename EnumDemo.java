@@ -1,4 +1,5 @@
-import java.util.*;
+import java.util.EnumMap;
+import java.util.EnumSet;
 
 public class EnumDemo {
 

@@ -2,7 +2,7 @@ import java.io.IOException;
 
 public class ExceptionDemo {
 
-    // Fails and throws an IOException, which we must declare since it's checked
+    // This method can fail and throw an IOException.
     private static Object failOne() throws IOException {
         System.out.println("Entered method failOne.");
         if(true) { // fool the compiler to think that the last line is reachable
@@ -55,26 +55,27 @@ public class ExceptionDemo {
         }
     }
     
-    // What does this method throw?
+    // What does this method throw? First place your bets, then see!
     public static void throwDemo() throws IOException {
         try {
-            // throw "Hello world"; // can't do this, String is not Throwable
-            throw new IllegalStateException("first");
+            // throw "Hello world"; // Also can't do this, String is not Throwable
+            throw new IllegalStateException("first"); //unchecked
         }
         finally {
-            throw new IOException("second");
+            throw new IOException("second"); // checked
         }
     }
     
     // Does this method terminate, or is it an infinite loop? Who will win
-    // this game of tug-of-war between these two opposing forces?
+    // this game of tug-of-war between these two opposing forces? What will
+    // happen if you swap the continue and break?
     public static void whileDemo() {
         while(true) {
             try {
-                break;
+                continue;
             }
             finally {
-                continue;
+                break;
             }
         }
     }

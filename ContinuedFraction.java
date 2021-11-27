@@ -1,5 +1,6 @@
-import java.math.*;
-import java.util.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Iterator;
 
 // https://en.wikipedia.org/wiki/Continued_fraction
 

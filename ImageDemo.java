@@ -1,11 +1,23 @@
-import java.awt.*;
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.awt.geom.*;
-import java.util.*;
-import java.io.*; // file stuff
-import javax.imageio.ImageIO; // image read and write from file
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 /**
  * A Swing example class that demonstrate how to download, render and modify images.

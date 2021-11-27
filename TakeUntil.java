@@ -1,6 +1,11 @@
-import java.util.*;
-import java.util.stream.*;
-import java.util.function.*;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /* Adapted from Saint Hill's answer in Stack Overflow. Create a class
    that can be used to convert any stream, finite or infinite, into

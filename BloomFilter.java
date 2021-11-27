@@ -1,9 +1,11 @@
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.Function;
+
 // A probabilistic monotonic set that is extremely space efficient even for large n,
 // but allows for a small chance of false positives. False negatives are impossible.
-// This is good enough for many practical applications.
-
-import java.util.*;
-import java.util.function.*;
+// This is good enough for many practical applications of such a space-efficient set.
 
 public class BloomFilter<E> {
 

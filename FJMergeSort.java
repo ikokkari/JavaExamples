@@ -1,5 +1,4 @@
-import java.util.concurrent.*;
-import java.util.*;
+import java.util.concurrent.RecursiveAction;
 
 /* Sort the given array using merge sort with recursive calls
  * executed in parallel, to demonstrate Java 7 ForkJoinTask. */

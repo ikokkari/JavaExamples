@@ -1,7 +1,15 @@
-import java.awt.*;
-import javax.swing.*;
-import java.awt.geom.*;
-import java.util.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.CubicCurve2D;
+import java.util.ArrayList;
+import java.util.Random;
 
 // Diffusion limited aggregation, adapted from http://paulbourke.net/fractals/dla/
 

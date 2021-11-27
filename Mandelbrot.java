@@ -1,15 +1,28 @@
-import java.awt.image.*;
-import java.awt.*;
-import javax.swing.*;
-import java.awt.event.*;
-import java.math.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.Comparator;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Mandelbrot extends JPanel {
     // The number of threads used to compute the image.
-    private static final int THREADS = 10;
+    private static final int THREADS = 4;
     // The size of this component in pixels.
     private final int sizeP;
     // The complex number at the top left corner of image.

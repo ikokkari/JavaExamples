@@ -1,5 +1,11 @@
-import java.io.*;
-import java.util.zip.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class GZip {
 
@@ -8,7 +14,7 @@ public class GZip {
         File original = new File(filename);
         try(InputStream i1 = new FileInputStream(original);
             OutputStream o = new GZIPOutputStream(new FileOutputStream(filename + ".gz"))) {
-            int b = i1.read(); 
+            int b = i1.read();
             while(b != -1) {
                 o.write(b); // Read and write bytes in lockstep
                 b = i1.read();
@@ -26,7 +32,8 @@ public class GZip {
                 b1 = i1.read();
                 b2 = i2.read();
                 if(b1 != b2) {
-                    zipped.delete(); return;
+                    zipped.delete();
+                    return;
                 }
             } while(b1 > -1);
             original.delete();

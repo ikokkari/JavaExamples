@@ -1,5 +1,10 @@
-import java.util.*;
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 
 // As in http://tutorials.jenkov.com/java-reflection/index.html
 

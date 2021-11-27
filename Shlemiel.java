@@ -1,5 +1,6 @@
-import java.util.*; // for Stack and HashSet
-import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Stack;
 
 /**
  * Many array problems are easy to solve in {@code O(n^2)} time with the "Shlemiel"

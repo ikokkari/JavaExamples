@@ -1,9 +1,23 @@
-import java.awt.*;
-import java.awt.image.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.geom.*;
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.Timer;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.Random;
 import java.util.ArrayList;
 
@@ -253,7 +267,7 @@ public class SpaceFiller {
             BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2 = (Graphics2D)(img.getGraphics());
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            final java.util.List<AreaInfo> areaInfos = fillSpace(w, h, n, g2,
+            fillSpace(w, h, n, g2,
                     new RegularPolygonFactory(3, 6),
                     new CircleFactory(),
                     new RingFactory(),

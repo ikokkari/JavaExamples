@@ -1,10 +1,3 @@
-/**
- * Example methods inspired by card games for the course CCPS 109.
- *
- * @author Ilkka Kokkarinen
- * @version (a version number or a date)
- */
-
 import java.util.Random;
 
 public class CardExamples {

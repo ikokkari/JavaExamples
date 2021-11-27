@@ -1,4 +1,4 @@
- import java.util.*; // for ArrayList
+import java.util.ArrayList;
 
 public class FirstBatch {
 

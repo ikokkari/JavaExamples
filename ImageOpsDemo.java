@@ -1,10 +1,27 @@
-import java.awt.*;
-import javax.swing.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import java.util.*;
-import java.io.*; // file
-import javax.imageio.ImageIO; // image read and write from file
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImageFilter;
+import java.awt.image.BufferedImageOp;
+import java.awt.image.ConvolveOp;
+import java.awt.image.CropImageFilter;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.ImageFilter;
+import java.awt.image.ImageProducer;
+import java.awt.image.Kernel;
+import java.awt.image.RGBImageFilter;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 // Demonstration of Image processing using ImageFilter subtypes to perform image
 // operations such as colour conversion, cropping and rotation on images.

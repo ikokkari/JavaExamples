@@ -1,5 +1,6 @@
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashSet;
+import java.util.PriorityQueue;
 
 /**
  * Compute the {code n}:th Hamming number by generating Hamming numbers in a priority queue.

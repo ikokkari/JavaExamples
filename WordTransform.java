@@ -1,7 +1,3 @@
-// An example of Strategy pattern, with different subalgorithms implemented
-// as subclasses of the abstract subalgorithm for the main algorithm to use as
-// part of its execution.
-
 public class WordTransform {
   
     // Something that transforms a word into some other word.

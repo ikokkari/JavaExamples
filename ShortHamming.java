@@ -1,5 +1,4 @@
-import java.util.*;
-import java.math.*;
+import java.math.BigInteger;
 
 public class ShortHamming {
 
