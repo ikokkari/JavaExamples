@@ -27,12 +27,12 @@ public class BigPrimes {
 
     /* A class representing the worker task of finding one random prime. */
     private static class PrimeFinder implements Callable<BigInteger> {
-        private static final AtomicInteger ticket_machine = new AtomicInteger(0);
+        private static final AtomicInteger TICKET_MACHINE = new AtomicInteger(0);
         private final int id; // The numerical ID of this task.
         private final int bits; // How many bits the prime number should contain.
         private final FinalCall done; // Continuation to execute after finding the prime.
         public PrimeFinder(int bits, FinalCall done) {
-            this.id = ticket_machine.getAndIncrement();
+            this.id = TICKET_MACHINE.getAndIncrement();
             this.bits = bits;
             this.done = done;
         }
@@ -167,6 +167,7 @@ public class BigPrimes {
         for(BigInteger p: primes) {
             System.out.println(primeString(p));
         }
+        shutdown();
     }
 
     // Shut down the executor service of this class.
