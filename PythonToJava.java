@@ -27,7 +27,7 @@ public class PythonToJava {
     // explicitly typed at compile time, so that all data must be declared its
     // type at compile time, so that the compiler can enforce that all data is 
     // used only according to that declared type. This allows many errors to be
-    // caught in the compile time, before the unit testing.
+    // caught at compile time, before the actual unit testing takes place.
 
     public static String ryersonLetterGrade(int pct) {
         // Local variable declarations must also be explicitly typed. However,
@@ -121,9 +121,10 @@ public class PythonToJava {
     }
 
     // Java has a while-loop and for-loop, but then also a do-while loop that Python
-    // does not have. In practice it is quite rare, maybe about 2% of all loops. But
-    // when it is time to use it, then it is time to use it. Here is a blast from the
+    // does not have. In practice it is quite rare, well under 2% of all loops. But
+    // when it is time to use it, then it is time to use it! Here is a blast from the
     // ancient past, Heron's algorithm for numerical approximation of square roots.
+
     public static double heronRoot(double x, boolean verbose) {
         double guess = x / 2; // we have to start from somewhere
         double prev;
@@ -148,11 +149,13 @@ public class PythonToJava {
     }
 
     // Java and similar languages have a switch-statement for long if-else ladders.
-    // Java 15 introduces switch expressions. Uncomment to experience the freedom.
+    // Java 15 introduces switch expressions. Uncomment to experience this freedom
+    // if you are working under Java 15 or later.
+
     /*
     public static int daysInMonth(int m, boolean leapYear) {
         return switch (m) {
-            // Multiple cases that share a body can be combined together.
+            // Multiple cases that share the same body can be combined.
             case 1, 3, 5, 7, 8, 10, 12 -> 31;
             case 2 ->
                     // Python equivalent: d = 29 if leapYear else 28
@@ -166,6 +169,7 @@ public class PythonToJava {
 
     // Same as in Python, Java strings are immutable. For the common operation of
     // building up a string by appending stuff piecemeal, use mutable StringBuilder.
+
     public static String countAndSay(String digits) {
         StringBuilder result = new StringBuilder();
         // We pretend that every string has '$' before and after it. This way
@@ -193,6 +197,7 @@ public class PythonToJava {
     // internal mechanism will be explored in 305, but we can still use them even
     // if we don't know how they work inside, the same way you are allowed to drive
     // a car even if you don't know how a combustion engine actually works.
+
     public static List<String> allCyclicShifts(String text) {
         // Keep track of which strings have already been produced.
         TreeSet<String> alreadySeen = new TreeSet<>();
@@ -206,7 +211,8 @@ public class PythonToJava {
     }
 
     // The starting point of execution when a Java class is run as a standalone program.
-    // Similar to spirit to Python construct if __name__ == '__main__':
+    // This is similar in spirit to Python construct if __name__ == '__main__':
+
     public static void main(String[] args) {
 
         System.out.print("A grade of 65% becomes " + ryersonLetterGrade(65) + " as letters.\n");

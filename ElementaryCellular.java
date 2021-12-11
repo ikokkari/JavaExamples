@@ -1,14 +1,23 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.event.*;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
 
 /**
  * A Swing component to display one-dimensional cellular automata, with
- * time flowing in the vertical direction as is customary with these.
+ * time flowing in the vertical direction, as is customary in this genre.
  * @author Ilkka Kokkarinen
  */
+
 public class ElementaryCellular extends JPanel {
 
     private static final int TOP = 35;
@@ -21,14 +30,6 @@ public class ElementaryCellular extends JPanel {
     
     private int rule = 110;
     private final BufferedImage img;
-    
-    // Getters and setters for those who use this class as a tool,
-    // instead of an interactive Swing component.
-    /**
-     * Returns the image calculated by this component.
-     * @return The image of the cellular automaton.
-     */
-    public BufferedImage getImage() { return img; }
     
     // Compute the value of the cell (x,y) based on its ancestors.
     private boolean evaluateCell(int x, int y, boolean fredkin) {

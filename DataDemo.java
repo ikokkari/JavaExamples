@@ -119,6 +119,7 @@ public class DataDemo {
         System.out.println("e equals " + e);
         System.out.println("f equals " + f);
         System.out.println("i equals " + i); // higher bits were irrevocably lost
+        System.out.println("j equals " + j); // double absorbs any int value
         System.out.println("Primitive types demo ends.\n");
     }
 

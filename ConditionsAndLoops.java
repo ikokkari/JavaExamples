@@ -107,7 +107,7 @@ public class ConditionsAndLoops {
     
     /**
      * Demonstrate the use of switch structure in Java with a method that
-     * computes the number of days in the given month.
+     * returns the number of days in the given month.
      * @param m The month number (January = 1, December = 12)
      * @param leapYear Whether the current year is a leap year.
      * @return The number of days in the given month.
@@ -115,15 +115,16 @@ public class ConditionsAndLoops {
     public static int numberOfDaysWithSwitch(int m, boolean leapYear) {
         int d;
         switch(m) {
-            // Multiple cases with common body can be combined together.
+            // Multiple cases with common body can be combined.
             case 1: case 3: case 5: case 7: case 8: case 10: case 12:
-            d = 31; break;
+                d = 31; break;
             case 2:
-            d = (leapYear? 29 : 28); break; // Ternary selection COND? EXPR1: EXPR2
+                // Ternary selection COND? EXPR1: EXPR2
+                d = (leapYear? 29 : 28); break;
             case 4: case 6: case 9: case 11:
-            d = 30; break;
-            default: // Sort of "none of the above"
-            d = 0;
+                d = 30; break;
+            default: // Sort of "none of the above", but can be anywhere
+                d = 0;
         }
         return d;
     }
@@ -307,7 +308,7 @@ public class ConditionsAndLoops {
             }
         }
         if(lower > upper) {
-            System.out.println("I am literally shaking, I don't even, Wow just wow!");
+            System.out.println("I am literally shaking, I don't even sweety, Wow just wow!");
             return 0;
         }
         else if(lower == upper) {
@@ -335,8 +336,8 @@ public class ConditionsAndLoops {
         System.out.println();
     }
     
-    // The class Random is good enough for toy games and such, but for
-    // serious simulations, import java.security.* and use
+    // The class Random is good enough for toy games and such. For
+    // serious simulations, import java.security.SecureRandom and use
     //
     // SecureRandom rng = new SecureRandom();
     // rng.setSeed("This should be some secret passphrase".toBytes());
@@ -350,8 +351,8 @@ public class ConditionsAndLoops {
         int count = 0;
         int d1, d2;
         // Of course, you can't check the snake eyes condition until you
-        // have rolled the dice once, which is why we need to use a do-while
-        // loop, instead of a while loop.
+        // have rolled the dice once, which is why we should use a do-while
+        // loop in this situation, instead of a while loop.
         do {
             d1 = rng.nextInt(6) + 1;
             d2 = rng.nextInt(6) + 1;
@@ -366,7 +367,7 @@ public class ConditionsAndLoops {
      * @param n Number of rolls to make.
      * @return The total for the rolls.
      */
-    public static int rollDie(int n, int d) {
+    public static int rollDice(int n, int d) {
         int sum = 0;
         for(int i = 0; i < n; i++) { // canonical way to do something n times
             int roll = rng.nextInt(d) + 1;
@@ -436,7 +437,7 @@ public class ConditionsAndLoops {
     
     /**
      * Checks if the parameter is a prime number, that is, greater than one and
-     * divisible only by one and by itself.
+     * divisible only by one and by itself. Simple trial division up to sqrt(n).
      * @param n The integer whose primality we want to determine.
      * @return Whether that integer is a prime number.
      */ 

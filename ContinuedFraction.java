@@ -1,5 +1,6 @@
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Iterator;
 
 // https://en.wikipedia.org/wiki/Continued_fraction
@@ -18,7 +19,7 @@ public class ContinuedFraction implements Iterator<Fraction> {
     
     public ContinuedFraction(Iterator<Integer> it) { this.it = it; }
     
-    public boolean hasNext() { 
+    public boolean hasNext() {
         return it.hasNext();
     }
     
@@ -55,18 +56,27 @@ public class ContinuedFraction implements Iterator<Fraction> {
         class Repeat implements Iterator<Integer> {
             private int count;
             private final int val;
-            public Repeat(int val, int count) { this.val = val; this.count = count; }
-            public boolean hasNext() { return count > 0; }
-            public Integer next() { count--; return 1; }
+            public Repeat(int val, int count) {
+                this.val = val;
+                this.count = count;
+            }
+            public boolean hasNext() {
+                return count > 0;
+            }
+            public Integer next() {
+                count--; return val;
+            }
         }
         
         // Iterator that produces ever more accurate approximations of Golden ratio.
         Iterator<Fraction> goldenApprox = new ContinuedFraction(new Repeat(1, N));
         // (Try what happens if your sequence repeats some other constant than one.)
         
-        // Generate the approximation as result of continuing fraction.
+        // Generate the approximation by evaluating the continuing fraction.
         Fraction gf = new Fraction(1);
-        while(goldenApprox.hasNext()) { gf = goldenApprox.next(); }
+        while(goldenApprox.hasNext()) {
+            gf = goldenApprox.next();
+        }
 
         // Create BigDecimal objects from BigInteger objects we have.
         BigDecimal num = new BigDecimal(gf.getNum());
@@ -74,7 +84,7 @@ public class ContinuedFraction implements Iterator<Fraction> {
         // Since BigDecimal divisions are generally non-terminating, you
         // need to specify how many decimal places your want, and how you
         // want the truncated decimal after the last one to be handled.
-        BigDecimal golden = num.divide(den, PREC, BigDecimal.ROUND_FLOOR);
+        BigDecimal golden = num.divide(den, PREC, RoundingMode.FLOOR);
         // Extract the decimals and print them on console.
         String decimals = golden.toString(); 
         int pos = decimals.indexOf('.') + 1;
@@ -90,5 +100,9 @@ public class ContinuedFraction implements Iterator<Fraction> {
         // represent which powers of the base two. Therefore, the double
         // type cannot tell apart the numbers x and x+y whenever y is 18+
         // orders of magnitude smaller than x, and x == x+y evaluates to true.)
+    }
+
+    public static void main(String[] args) {
+        computeGoldenRatioDemo();
     }
 }

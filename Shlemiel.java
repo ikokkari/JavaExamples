@@ -3,9 +3,10 @@ import java.util.Arrays;
 import java.util.Stack;
 
 /**
- * Many array problems are easy to solve in {@code O(n^2)} time with the "Shlemiel"
- * approach, but with some clever thinking, they can be turned into {@code O(n)} time
- * single pass algorithms.
+ * Many array problems are easy to solve in {@code O(n^2)} quadratic time with a
+ * "Shlemiel" approach, but with some clever thinking, they can be turned into
+ * linear time {@code O(n)} single pass algorithms. This class illustrates some
+ * techniques to achieve this.
  * @author Ilkka Kokkarinen
  */
 
@@ -57,10 +58,10 @@ public class Shlemiel {
     
     /**
      * Compute the n:th Fibonacci number using a dynamic programming loop that
-     * fills the array of subproblem solutions in an order that guarantees that
-     * whenever the loop comes to given element, the elements that the recursion 
-     * needs have already been computed, so recursive calls can be turned into
-     * efficient O(1) array lookups.
+     * fills in the array of solutions to subproblems in some order that guarantees
+     * that whenever the loop comes to given position, the elements that the recursion
+     * would require to have already been computed. Recursive calls can now be turned
+     * into simple constant-time array lookups.
      * @param n The position of the Fibonacci number to compute.
      * @return The n:th Fibonacci number.
      */
@@ -171,10 +172,12 @@ public class Shlemiel {
     public static void removeShortStringsShlemiel(ArrayList<String> a, int len) {
         int i = 0;
         while(i < a.size()) {
-            if(a.get(i).length() < len) { a.remove(i); } // remove from middle is O(n)
+            if(a.get(i).length() < len) {
+                a.remove(i); // removing element from middle takes linear time
+            }
             else { i++; }
         }
-        // Total worst case running time is O(n) * O(n) = O(n ^ 2)
+        // Total worst case running time is O(n) * O(n) = O(n^2)
     }
     
     /**
@@ -187,58 +190,8 @@ public class Shlemiel {
         for(String e : a) { // total of O(n) over n rounds
             if(e.length() >= len) { tmp.add(e); } // O(1) amortized
         }
-        a.clear(); // O(n) (references are set to null to allow garbage collection)
+        a.clear(); // O(n) (references are set to null to let garbage collection proceed)
         a.addAll(tmp); // O(n)
-        // Total worst case running time is 3 * O(n) = O(n)
-    }
-    
-    /**
-     * Given a string that consists of characters "()[]{}" only, determine whether
-     * it is a properly parenthesized so that pairs of matching parentheses are
-     * properly nested and balanced.
-     * @param s The string to check for proper parentheses.
-     * @return {@code true} if the string is properly parenthesized, {@code false} otherwise.
-     */
-    public static boolean isProperlyParenthesizedShlemiel(String s) {
-        // Shlemiel's solution to check whether a string is properly parenthesized. Find
-        // a pair of innermost parentheses, remove that, and check that the rest of the
-        // string is properly parenthesized.
-        while(s.length() > 0) {
-            boolean changed = false;
-            for(int i = 0; i < s.length()-1; i++) {
-                String piece = s.substring(i, i + 2);
-                if(piece.equals("()") || piece.equals("{}") || piece.equals("[]")) {
-                    s = s.substring(0, i) + s.substring(i+2);
-                    changed = true;
-                    break;
-                }
-            }
-            if(!changed) { return false; }
-        }
-        return true;
-    }
-    
-    /**
-     * Given a string that consists of characters "()[]{}" only, determine whether
-     * it is a properly parenthesized so that pairs of matching parentheses are
-     * properly nested and balanced.
-     * @param s The string to check for proper parentheses.
-     * @return {@code true} if the string is properly parenthesized, {@code false} otherwise.
-     */
-    public static boolean isProperlyParenthesized(String s) {
-        // Stack-based solution to verify that string is properly parenthesized.
-        Stack<Character> stack = new Stack<>();
-        for(int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if(c == '(' || c == '[' || c == '{') { stack.push(c); }
-            else {
-                if(stack.isEmpty()) { return false; } // More right parens than left ones
-                char c2 = stack.pop();
-                if(c == ')' && c2 != '(') { return false; }
-                if(c == ']' && c2 != '[') { return false; }
-                if(c == '}' && c2 != '{') { return false; }
-            }
-        }
-        return stack.isEmpty();
+        // Total worst case running time is O(n) + O(n) + O(n) = O(n)
     }
 }
