@@ -57,12 +57,8 @@ public class ImageLoops {
                   (x + y) / BOX % 2 == 0 &&
                   (x >= y ? (x - y) / BOX % 2 == 0 : (y - x) / BOX % 2 == 1)
                 );
-                imgs[4] = computeImage(SIZE, SIZE, (x, y) -> {
-                    int xd = Math.abs(SIZE/2 - 1 - x) / BOX;
-                    int yd = Math.abs(SIZE/2 - 1 - y) / BOX;
-                    int d = Math.max(xd, yd);
-                    return (d % 2) == 0;
-                });
+                // From TAOCP 7.1.3, via yurichev.com
+                imgs[4] = computeImage(SIZE, SIZE, (x, y) -> ((y*y*x >> 11) & 1) > 0);
                 imgs[5] = computeImage(SIZE, SIZE, (x, y) -> {
                     int c = x*x-2*(x&y)+y|x + (x^y);
                     c = c % 256;
