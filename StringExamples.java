@@ -1,11 +1,6 @@
 import java.math.BigInteger;
 import java.util.Random;
 
-/**
- * Additional examples of {@code String} for the course CCPS109.
- * @author Ilkka Kokkarinen
- */
-
 public class StringExamples {
 
     // First, a cute little example from Stack Overflow to demonstrate that
@@ -214,5 +209,29 @@ public class StringExamples {
             }
         }
         return result.toString();
+    }
+
+    public static void main(String[] args) {
+        String message = "Hello, world! How are you doing there, buddy?";
+        String rotated = rot13(message);
+        String back = rot13(rotated);
+        System.out.println("Original message: " + message);
+        System.out.println("Rotated message : " + rotated);
+        System.out.println("Rotated again   : " + back);
+
+        System.out.println("Disemvoweled original: " + disemvowel(message));
+        System.out.println("The original message contains " + vowelCounter(message) + " vowels.");
+        System.out.print("Reversing the words of original message gives: ");
+        System.out.println(wordReverser(message));
+
+        System.out.print("Computed using strings, the 30:th Fibonacci number is: ");
+        System.out.println(fib(30));
+
+        String original = "123";
+        while(original.length() < 100) {
+            String counted = countAndSay(original);
+            System.out.println("Count and say of " + original + " is " + counted);
+            original = counted;
+        }
     }
 }

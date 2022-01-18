@@ -17,10 +17,8 @@ public class ConditionsAndLoops {
     public static char sign(int a) {
         char result;
         if(a < 0) { result = '-'; }
-        else {
-            if(a > 0) { result = '+'; }
-            else { result = '0'; }
-        }
+        else if(a > 0) { result = '+'; }
+        else { result = '0'; }
         return result;
     }
     
@@ -79,30 +77,6 @@ public class ConditionsAndLoops {
         else if(m == 4 || m == 6 || m == 9 || m == 11) { d = 30; }
         else { d = 31; } // last step of a ladder is typically unconditional
         return d;
-    }
-    
-    /**
-     * Another example of if-else ladders in Java, with a method that
-     * returns the Ryerson letter grade from the percentage grade, as in
-     * {@code http://www.ryerson.ca/currentstudents/essr/gradescales_ugrad/}
-     * @param p The percentage grade.
-     * @return The letter grade as a string.
-     */
-    public static String convertRyersonLetterGrade(int p) {
-        String result;
-        // Start by handling F and A levels as special cases
-        if(p < 50) { result = "F"; }
-        else if(p >= 90) { result = "A+"; }
-        else if(p >= 85) { result = "A"; }
-        else if(p >= 80) { result = "A-"; }
-        else { // B, C, and D levels all have the same structure
-            int tens = p / 10; // now known to be 5, 6 or 7 for certain
-            result = "DCB".substring(tens - 5, tens - 4); // cute
-            int ones = p % 10;
-            if(ones < 3) { result += "-"; }
-            else if(ones > 6) { result += "+"; }
-        }
-        return result;
     }
     
     /**
@@ -174,7 +148,7 @@ public class ConditionsAndLoops {
             boolean b1 = isLeapYear(y);
             boolean b2 = isLeapYearOtherWay(y);
             boolean b3 = isLeapYearOneLiner(y);
-            if(b1 != b2 || b2 != b3) { // de Morgan to !(b1 == b2 && b2 == b3)
+            if(b1 != b2 || b2 != b3) { // de Morgan this to !(b1 == b2 && b2 == b3)
                 return false; // Tear it down and start again.
             }
         }
@@ -188,13 +162,16 @@ public class ConditionsAndLoops {
      * @param b Second integer
      * @return The greatest common divisor of {@code a} and {@code b}.
      */
-    public static int gcd(int a, int b) {
+    public static int gcd(int a, int b, boolean verbose) {
         // Works whether a > b or not. Try it out.
+
         while(b > 0) {
+            if(verbose) { System.out.println("a is " + a + ", b is " + b); }
             int tmp = a % b; // % is the integer remainder operator
             a = b;
             b = tmp;
         }
+        if(verbose) { System.out.println("Returning result " + a); }
         return a;
     }
     
@@ -227,10 +204,10 @@ public class ConditionsAndLoops {
      * to appear as a part of Java identifiers these days.
      * @return The count of all characters that can appear in Java identifier.
      */
-    public static int countJavaIdentifierChars() {
+    public static int countUnicodeLetters() {
         int count = 0;
         for(int c = 0; c < Character.MAX_CODE_POINT; c++) {
-            if(Character.isJavaIdentifierPart(c) && !Character.isIdentifierIgnorable(c)) {
+            if(Character.isLetter(c)) {
                 count++;
             }
         }
@@ -256,9 +233,10 @@ public class ConditionsAndLoops {
         return result.toString();
     } 
     
-    // A random number generator that we need in the next methods.
-    // When no seed is given, system clock is used as the seed value.
-    private static final Random rng = new Random();
+    // A random number generator that we need in the next methods. When no seed
+    // is given, system clock is used as the seed value. But it's better to give
+    // the same seed to make the randomized results repeatable.
+    private static final Random rng = new Random(12345);
     
     /**
      * The classic number guessing game programming exercise. Keeps asking the
@@ -375,22 +353,6 @@ public class ConditionsAndLoops {
         }
         return sum;
     }   
-   
-    /**
-     * Floating point numbers don't make good loop counters, because of the
-     * imprecision of the floating point arithmetic. Many familiar numbers such
-     * as 0.1 simply do not have an exact representation in floating point.
-     * This method illustrates this by trying to loop from 0 to 1 with an
-     * increment of 0.1 each time. Never use a floating point number as a
-     * loop counter!
-     */
-    public static void floatingPointLoop() {
-        double x = 0.0;
-        while(x <= 1.0) {
-            System.out.println(x); // all the decimal places available
-            x = x + 0.1;
-        }
-    }
 
     // In the eighties it was a law that every programming book had to have the
     // following two exercises about nested loops: First, output a rectangle
@@ -484,5 +446,57 @@ public class ConditionsAndLoops {
         }
         result.append("]");
         return result.toString();
+    }
+
+    public static void main(String[] args) {
+        int[] years = {1997, 2000, 2012, 2020, 2100};
+        for(int y: years) {
+            System.out.println("Is the year " + y + " a leap year? " + isLeapYear(y));
+        }
+
+        int a = 2*2*3*7*13*23, b = 2*3*5*11*13;
+        System.out.println("\nComputing the greatest common divisor of " + a + " and " + b);
+        int d = gcd(a, b, true);
+        int lcm = a * (b / d); // Group operations this way to avoid overflow
+        System.out.println("Least common multiple of " + a + " and " + b + " is " + lcm + "\n");
+
+        int[] collatzStarts = {10, 100, 1000, 12345, 987654};
+        for(int c: collatzStarts) {
+            System.out.println("Computing Collatz sequence from " + c + ":");
+            int steps = collatz(c, true);
+            System.out.println("Goal value one reached in " + steps + " steps.");
+        }
+
+        System.out.println("\nHow many Unicode characters are letters? Drum roll...");
+        int letterCount = countUnicodeLetters();
+        System.out.println("Found " + letterCount + " characters that are letters.");
+
+        System.out.println("\nSolving fizzbuzz from 1 to 100:");
+        String result = fizzBuzz(1, 100);
+        System.out.println("<" + result + ">");
+
+        System.out.println("\nLet's see how many rolls we need on average to roll snake eyes.");
+        int rollsTotal = 0;
+        for(int i = 0; i < 100_000; i++) {
+            rollsTotal += rollUntilSnakeEyes();
+        }
+        // With C-style printf, the line break has to be explicitly placed in the format string.
+        System.out.printf("Needed %.2f rolls on average to get snake eyes.\n", rollsTotal / 100000.0);
+
+        System.out.println("\nHow many integers up to one million are primes?");
+        int primeCount = 0;
+        for(int i = 0; i <= 1_000_000; i++) {
+            if(isPrime(i)) { primeCount++; }
+        }
+        System.out.println("There are exactly " + primeCount + " prime numbers up to one million.");
+
+        System.out.println("\nThe prime factors of " + a + " are: ");
+        System.out.println(listPrimeFactors(a));
+
+        System.out.println("\nHere is a 5-by-8 rectangle of dollar signs.");
+        outputRectangle(5, 8, '$');
+
+        System.out.println("\nHere is a triangle of ten rows of dollar signs.");
+        outputTriangle(10, '$');
     }
 }
