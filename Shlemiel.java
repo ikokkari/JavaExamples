@@ -157,7 +157,7 @@ public class Shlemiel {
         // array to remember which values we have already seen. Allocate
         // one more element than needed to save two subtractions per round.
         boolean[] alreadySeen = new boolean[n + 1];
-        for(int e : a) {
+        for(int e: a) {
             if(e < 1 || e > n || alreadySeen[e]) { return false; }
             alreadySeen[e] = true;
         }

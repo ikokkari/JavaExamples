@@ -171,7 +171,10 @@ public class ConditionsAndLoops {
             a = b;
             b = tmp;
         }
-        if(verbose) { System.out.println("Returning result " + a); }
+        if(verbose) {
+            System.out.println("a is " + a + ", b is " + b);
+            System.out.println("Returning result " + a);
+        }
         return a;
     }
     
@@ -190,8 +193,7 @@ public class ConditionsAndLoops {
                 System.out.print((count > 0 ? ", " : "") + n);
             }
             count++;
-            if(n % 2 == 0) { n = n / 2; }
-            else { n = 3*n+1; }
+            n = n % 2 == 0 ? n / 2 : 3*n+1;
         }
         if(verbose) {
             System.out.println((count > 0 ? ", " : "") + n);
@@ -454,7 +456,7 @@ public class ConditionsAndLoops {
             System.out.println("Is the year " + y + " a leap year? " + isLeapYear(y));
         }
 
-        int a = 2*2*3*7*13*23, b = 2*3*5*11*13;
+        int b = 2*2*3*7*13*23, a = 2*3*5*11*13;
         System.out.println("\nComputing the greatest common divisor of " + a + " and " + b);
         int d = gcd(a, b, true);
         int lcm = a * (b / d); // Group operations this way to avoid overflow
