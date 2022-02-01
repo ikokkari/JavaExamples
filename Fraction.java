@@ -1,6 +1,7 @@
 import java.math.BigInteger;
 
-/** The class Fraction implements the integer fractions and some
+/**
+ *  The class Fraction implements the integer fractions and some
  *  of their arithmetic and comparison operations. The fractions
  *  are internally implemented using Java's BigInteger class for
  *  arbitrarily large integer values.
@@ -171,5 +172,16 @@ public class Fraction implements Comparable<Fraction> {
         BigInteger gcd = num.gcd(den); // handy!
         num = num.divide(gcd); // to simplify a fraction num/den, divide both num
         den = den.divide(gcd); // and den by their greatest common divisor
+    }
+
+    // For demonstration purposes.
+    public static void main(String[] args) {
+        Fraction a = new Fraction(3, 7); // 3/7
+        Fraction b = new Fraction(-2, 18); // -1/9
+        Fraction c = a.add(b);
+        c = a.multiply(a.subtract(b));
+        System.out.println("a is now " + a);
+        System.out.println("b is now " + b);
+        System.out.println("c is now " + c);
     }
 }
