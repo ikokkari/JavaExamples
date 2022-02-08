@@ -115,7 +115,7 @@ public class Fraction implements Comparable<Fraction> {
      * @return {@code true} if the fractions are equal, {@code false} otherwise.
      */
     @Override public boolean equals(Object o) {
-        if(o instanceof Fraction) { // instanceof pattern variable
+        if(o instanceof Fraction) {
             // downcast to correct subtype
             Fraction other = (Fraction)o;
             return (this.num.equals(other.num) && this.den.equals(other.den));
@@ -179,7 +179,7 @@ public class Fraction implements Comparable<Fraction> {
         Fraction a = new Fraction(3, 7); // 3/7
         Fraction b = new Fraction(-2, 18); // -1/9
         Fraction c = a.add(b);
-        c = a.multiply(a.subtract(b));
+        c = c.multiply(a.subtract(b));
         System.out.println("a is now " + a);
         System.out.println("b is now " + b);
         System.out.println("c is now " + c);
