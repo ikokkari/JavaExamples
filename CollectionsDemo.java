@@ -5,56 +5,60 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.TreeSet;
 
 public class CollectionsDemo {
     
-    private static final Random rng = new Random();
+    private static final Random rng = new Random(4242);
     
     @SuppressWarnings("unchecked")
     public static void basicOperations() {
-        TreeSet<Integer> tsi1 = new TreeSet<>();
+        System.out.println("Basic operations demo begins.");
+        TreeSet<Integer> treeSetOne = new TreeSet<>();
         
         // First, the dynamic set operations add, remove and contains.
-        tsi1.add(42); tsi1.add(99); tsi1.add(99);
-        System.out.println("Our example treeset: " + tsi1); // decent toString()
+        treeSetOne.add(42); treeSetOne.add(99); treeSetOne.add(99);
+        System.out.println("Our example treeset: " + treeSetOne); // decent toString()
         
         // Dumb way to do the following. Used here only for demonstration purposes.
         System.out.println("Looking for elements in the treeset.");
         for(int i = 0; i < 100; i++) {
-            if(tsi1.contains(i)) { System.out.println("Element " + i + " was found"); }
+            if(treeSetOne.contains(i)) { System.out.println("Element " + i + " was found"); }
         }
-        tsi1.remove(42);
+        treeSetOne.remove(42);
         System.out.println("Looking for elements in the treeset again.");
         for(int i = 0; i < 100; i++) {
-            if(tsi1.contains(i)) { System.out.println("Element " + i + " was found"); }
+            if(treeSetOne.contains(i)) { System.out.println("Element " + i + " was found"); }
         }
         
         // Two collections are equal if they are of same general type with equal elements.
-        TreeSet<Integer> tsi2 = new TreeSet<>();
-        tsi2.add(99);
-        HashSet<Integer> hs = new HashSet<>();
-        hs.add(99);
-        ArrayList<Integer> al = new ArrayList<>();
-        al.add(99);
-        System.out.println("tsi1 equals tsi2: " + tsi1.equals(tsi2)); // true
-        System.out.println("tsi1 equals hs: " + tsi1.equals(hs)); // true, hs is a Set
-        System.out.println("tsi1 equals al: " + tsi1.equals(al)); // false, al is a List
-        System.out.println("tsi1 equals \"Hello\": " + tsi1.equals("Hello")); // false, for sure
+        TreeSet<Integer> treeSetTwo = new TreeSet<>();
+        treeSetTwo.add(99);
+        HashSet<Integer> hashSet = new HashSet<>();
+        hashSet.add(99);
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        arrayList.add(99);
+        System.out.println("treeSetOne equals treeSetTwo: " + treeSetOne.equals(treeSetTwo)); // true
+        System.out.println("treeSetOne equals hashSet: " + treeSetOne.equals(hashSet)); // true, hashSet is a Set
+        System.out.println("treeSetOne equals arrayList: " + treeSetOne.equals(arrayList)); // false, arrayList is a List
+        System.out.println("treeSetOne equals \"Hello\": " + treeSetOne.equals("Hello")); // false, for sure
         
         // Collections contain references, not actual objects.
         ArrayList<Object> ao = new ArrayList<Object>();
         ao.add(42);
         ao.add("Hello world");
-        ao.add(ao); // strange but perfectly legal
+        ao.add(ao); // This does not become an infinitely deeply nested matryoshka doll.
         System.out.println(ao + " has size of " +  ao.size()); // implicit toString()
         ((Collection<Object>)(ao.get(2))).add(ao); // even more strange, yet still legal
         System.out.println(ao + " has size of " +  ao.size()); // implicit toString()
+        System.out.println("Basic operations demo ends.\n\n");
     }
     
     // The Collections utility class contains many useful polymorphic algorithms.
     public static void algorithmsDemo() {
+        System.out.println("Algorithms demo begins.");
         ArrayList<Integer> ai = new ArrayList<>();
         for(int i = 0; i < 10; i++) {
             ai.add(rng.nextInt(1000));
@@ -78,6 +82,7 @@ public class CollectionsDemo {
         Collections.fill(ai, 99);
         System.out.println(ai);
         System.out.println("Value 99 occurs in the list " + Collections.frequency(ai, 99) + " times.");
+        System.out.println("Algorithms demo ends.\n\n");
     }
     
     // Polymorphic methods can be written to work on any collection of any type. The
@@ -85,10 +90,10 @@ public class CollectionsDemo {
     // instead of us having to write a new version of this method for each new subtype.
     // Always remember the DRY Principle: Don't Repeat Yourself!
     
-    public static int sum(Iterator<Integer> i) {
+    public static int sum(Iterator<Integer> iterator) {
         int total = 0;
-        while(i.hasNext()) {
-            int e = i.next(); // return current element and step forward
+        while(iterator.hasNext()) {
+            int e = iterator.next(); // return current element and step forward
             total += e;
         }
         return total;
@@ -99,10 +104,10 @@ public class CollectionsDemo {
         return sum(c.iterator());
     }    
     
-    // There is no law saying that the iterator has to be "backed up" by some actual
-    // collection. You can iterate through a virtual set of data, even infinite one.
-    // The algorithms that use these iterators don't know the difference, which is
-    // the whole point of polymorphism.
+    // There is no law dictating that the iterator has to be "backed up" by some actual
+    // collection. You can iterate through a virtual sequence of data, even infinite.
+    // The algorithms that use these iterators don't know the difference nor do they
+    // even have to care, which is the whole point of polymorphism.
     
     public static class FibonacciIterator implements Iterator<BigInteger> {
         private BigInteger a = BigInteger.ZERO;
@@ -174,7 +179,7 @@ public class CollectionsDemo {
 
     // Another custom comparator that compares numbers in lexicographical order.
     
-    private static class LexicalComparator implements Comparator<Integer> {
+    private static class LexicographicComparator implements Comparator<Integer> {
         public int compare(Integer a, Integer b) {
             return ("" + a).compareTo("" + b); // String has internal compareTo method
         }
@@ -201,7 +206,8 @@ public class CollectionsDemo {
     }
     
     public static void demonstrateComparators() {
-        ArrayList<Integer> ai = new ArrayList<>();
+        System.out.println("Comparators demo begins.");
+        List<Integer> ai = new ArrayList<>();
         for(int i = 0; i < 10; i++) { ai.add(rng.nextInt(1000)); }
         System.out.println("Initial arraylist:");
         System.out.println(ai);
@@ -210,16 +216,23 @@ public class CollectionsDemo {
         System.out.println(ai);
         System.out.println("Largest element is " + Collections.max(ai) + ".");
         
-        System.out.println("Sorted with a counting oddeven Comparator:");
+        System.out.println("Sorted with a counting OddEvenComparator:");
         CountingComparator<Integer> comp = new CountingComparator<>(new OddEvenComparator());
-        ai.sort(comp);
+        Collections.sort(ai, comp);
         System.out.println(ai);
         System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
         
         System.out.println("Sorted with a counting lexicographic Comparator:");
-        comp = new CountingComparator<>(new LexicalComparator());
-        ai.sort(comp);
+        comp = new CountingComparator<>(new LexicographicComparator());
+        Collections.sort(ai, comp);
         System.out.println(ai);
         System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
+        System.out.println("Comparators demo ends.");
+    }
+
+    public static void main(String[] args) {
+        basicOperations();
+        algorithmsDemo();
+        demonstrateComparators();
     }
 }
