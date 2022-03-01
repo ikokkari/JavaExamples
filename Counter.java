@@ -5,6 +5,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -19,12 +20,12 @@ public class Counter extends JPanel {
     private int count = 0;
     
     public Counter() {
-        this.setPreferredSize(new Dimension(300, 80));
+        this.setPreferredSize(new Dimension(250, 80));
         // Every Swing component can have an arbitrarily festive and decorative border.
-        this.setBorder(BorderFactory.createSoftBevelBorder(
-            BevelBorder.RAISED, Color.BLUE, Color.CYAN, Color.RED, Color.YELLOW)
-        );
-        
+        this.setBorder(BorderFactory.createLoweredSoftBevelBorder());
+
+        // Instead of the default FlowLayout layout manager, let's try something more fancy.
+        this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
         // When a local variable is accessed from a local nested class, that variable has
         // to be effectively final; that is, either declared final, or never assigned to
         // after initialization.
@@ -46,8 +47,8 @@ public class Counter extends JPanel {
                 // As you see, nested class methods can modify the fields of the outer
                 // class object directly without any special syntax...
                 count++;
-                // ... and use the effectively final local variables of the method.
-                myLabel.setText(count + "");
+                // ... and access all effectively final local variables of the method.
+                myLabel.setText(Integer.toString(count));
             }
         }
         myButton.addActionListener(new MyActionListener());
