@@ -9,11 +9,13 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.border.BevelBorder;
 
 public class Counter extends JPanel {
 
-    private static final Font buttonFont = new Font("Arial", Font.PLAIN, 28);
+    private static final Font BUTTON_FONT = new Font("Arial", Font.PLAIN, 28);
+    private static final Font LABEL_FONT = new Font("Courier", Font.BOLD, 50);
     private int count = 0;
     
     public Counter() {
@@ -26,15 +28,15 @@ public class Counter extends JPanel {
         // When a local variable is accessed from a local nested class, that variable has
         // to be effectively final; that is, either declared final, or never assigned to
         // after initialization.
-        JLabel lab = new JLabel("0");
-        lab.setBorder(BorderFactory.createEtchedBorder());
-        lab.setFont(new Font("Courier", Font.BOLD, 50));
-        this.add(lab);
+        JLabel myLabel = new JLabel("0");
+        myLabel.setBorder(BorderFactory.createEtchedBorder());
+        myLabel.setFont(LABEL_FONT);
+        this.add(myLabel);
         
-        JButton but = new JButton("Press me");
-        but.setFont(buttonFont);
-        but.setToolTipText("Click to increase the count");
-        this.add(but);
+        JButton myButton = new JButton("Press me");
+        myButton.setFont(BUTTON_FONT);
+        myButton.setToolTipText("Click to increase the count");
+        this.add(myButton);
         
         // A local class defined and used only inside this method.
         class MyActionListener implements ActionListener {
@@ -45,10 +47,10 @@ public class Counter extends JPanel {
                 // class object directly without any special syntax...
                 count++;
                 // ... and use the effectively final local variables of the method.
-                lab.setText(count + "");
-            }    
+                myLabel.setText(count + "");
+            }
         }
-        but.addActionListener(new MyActionListener());
+        myButton.addActionListener(new MyActionListener());
     }
 
     public static void main(String[] args) {
@@ -58,9 +60,11 @@ public class Counter extends JPanel {
         // Let's add sixteen separate Counter instances, just to show what happens.
         int n = 4; 
         f.setLayout(new GridLayout(n, n));
-        for(int i = 0; i < n*n; i++) {
-            f.add(new Counter());
-        }
+        for(int i = 0; i < n*n-1; i++) { f.add(new Counter()); }
+        // Just to make a point about GridLayout, make bottom right component different.
+        JTextField myTextField = new JTextField();
+        myTextField.setText("Look at me, I am a text field");
+        f.add(myTextField);
         f.pack();
         f.setVisible(true);        
     }    
