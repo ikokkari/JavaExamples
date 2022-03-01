@@ -59,7 +59,7 @@ public class ShapePanel extends JPanel {
         // To render shapes, you need to define the stroke and the paint strategies used.
         // This is just a fancy way to say that you need to choose the pen and the colour.
         g2.setStroke(new BasicStroke(3.0f));
-        g2.setPaint(Color.RED); // uniform colour
+        g2.setPaint(Color.RED); // Solid uniform colour
         for(int r = 0; r < 150; r += 10) {
             // If nothing else, let's admire the existence of the method "draw"
             // that can draw the outline of any Shape that anybody will ever think up.
@@ -99,6 +99,7 @@ public class ShapePanel extends JPanel {
         // A more complex polygon shape that is partially outside the component bounds. The
         // rendering engine will automatically clip each shape into the visible "peephole"
         // defined by the component bounds.
+        final int CENTER_X = 150, CENTER_Y = 250;
         Path2D.Double path = new Path2D.Double(); // outline path of the shape
         int points = 10; // Try out different values to see how these formulas work.
         int n = 2 * points; // As a polygon, a ten-point star has twenty corner points.
@@ -106,10 +107,10 @@ public class ShapePanel extends JPanel {
             double a = i * 2 * Math.PI / n; // Angles are given in radians.
             double r = (i % 2 == 0) ? 100 : 50; // Tip or groove?
             if(i == 0) { // Starting point of the polygon starts the path.
-                path.moveTo(150 + r * Math.cos(a), 250 + r * Math.sin(a)); 
+                path.moveTo(CENTER_X + r * Math.cos(a), CENTER_Y + r * Math.sin(a));
             }
             else { // Consecutive line segment edges.
-                path.lineTo(150 + r * Math.cos(a), 250 + r * Math.sin(a)); 
+                path.lineTo(CENTER_X + r * Math.cos(a), CENTER_Y + r * Math.sin(a));
             }
         }
         
