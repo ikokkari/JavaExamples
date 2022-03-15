@@ -24,25 +24,27 @@ public class GZip {
                 }
             }
         }
-        // try-with-resources silently generates the finally-blocks to close these streams.
+        // try-with-resources silently generates the finally-blocks to close both streams.
         
         // Before deleting the original, let's at least ensure that compression was successful.
         File compressedFile = new File(resultFileName);
         if(!(compressedFile.exists() && compressedFile.length() > 0)) {
             throw new IOException("Unable to create compressed file");
         }
-        try (InputStream originalStream = new FileInputStream(original);
-             InputStream compressedStream = new GZIPInputStream(new FileInputStream(compressedFile))) {
-            int b1, b2;
-            do {
-                b1 = originalStream.read();
-                b2 = compressedStream.read();
-                if(b1 != b2) {
-                    compressedFile.delete();
-                    throw new IOException("Compression result not equal to original");
-                }
-            } while(b1 > -1);
-            original.delete();
+        try (InputStream originalStream = new FileInputStream(original)) {
+            try (InputStream compressedStream = new GZIPInputStream(new FileInputStream(compressedFile))) {
+                int b1, b2;
+                do {
+                    b1 = originalStream.read();
+                    b2 = compressedStream.read();
+                    if (b1 != b2) {
+                        compressedFile.delete();
+                        throw new IOException("Compression result not equal to original");
+                    }
+                } while(b1 > -1);
+                // Having come this far, we are willing to put our head on the chopping block.
+                original.delete();
+            }
         }
     }
         
