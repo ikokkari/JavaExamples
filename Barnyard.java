@@ -107,7 +107,7 @@ public class Barnyard {
             this.client = client;
             System.out.println("Constructor of LoudAnimal with " + client);
         }
-        @Override public String getSound() { 
+        @Override public String getSound() {
             return client.getSound().toUpperCase();
         }
         @Override public String getSpecies() {
@@ -131,6 +131,21 @@ public class Barnyard {
         }
     }
 
+    // Once more, with a feeling.
+    public static class AngryAnimal extends Animal {
+        private final Animal client;
+        public AngryAnimal(Animal client) {
+            this.client = client;
+            System.out.println("Constructor of AngryAnimal with " + client);
+        }
+        @Override public String getSound() {
+            return "grrr " + client.getSound() + " hisss!";
+        }
+        @Override public String getSpecies() {
+            return "angry " + client.getSpecies();
+        }
+    }
+
     // To avoid code duplication in decorators, it might be a good idea to define an
     // abstract superclass AnimalDecorator to take care of this boilerplate. The
     // subclasses would then override precisely those methods for which that type
@@ -146,8 +161,10 @@ public class Barnyard {
         
         Animal[] as = {
             new MirroredAnimal(new Goose()),
-            new LoudAnimal(new Cat()),
-            new MirroredAnimal(new LoudAnimal(new Chicken()))
+            new MirroredAnimal(new LoudAnimal(new Chicken())),
+            // The order of otherwise same decorators may affect the behaviour.
+            new AngryAnimal(new LoudAnimal(new Cat())),
+            new LoudAnimal(new AngryAnimal(new Cat()))
         };
         System.out.println(Arrays.toString(as));
         System.out.println("Let's hear the sounds that these creatures make: ");

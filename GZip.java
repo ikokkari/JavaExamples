@@ -12,28 +12,34 @@ public class GZip {
     private static void gzipFile(String filename) throws IOException {
         // Create the compressed version of the original file.
         File original = new File(filename);
-        try(InputStream i1 = new FileInputStream(original);
-            OutputStream o = new GZIPOutputStream(new FileOutputStream(filename + ".gz"))) {
-            int b = i1.read();
-            while(b != -1) {
-                o.write(b); // Read and write bytes in lockstep
-                b = i1.read();
+        // The policy to name the resulting compressed version of the file.
+        String resultFileName = filename + ".gz";
+
+        try (InputStream source = new FileInputStream(original)) {
+            try (OutputStream target = new GZIPOutputStream(new FileOutputStream(resultFileName))) {
+                int b = source.read();
+                while (b != -1) {
+                    target.write(b); // Read and write bytes in lockstep
+                    b = source.read();
+                }
             }
         }
-        // try-with-resources autogenerates the finally-block to close the streams.
+        // try-with-resources silently generates the finally-blocks to close these streams.
         
-        // Before deleting the original, ensure that compression was successful.
-        File zipped = new File(filename + ".gz");
-        if(!(zipped.exists() && zipped.length() > 0)) { return; }
-        try (InputStream i1 = new FileInputStream(original);
-             InputStream i2 = new GZIPInputStream(new FileInputStream(zipped))) {
+        // Before deleting the original, let's at least ensure that compression was successful.
+        File compressedFile = new File(resultFileName);
+        if(!(compressedFile.exists() && compressedFile.length() > 0)) {
+            throw new IOException("Unable to create compressed file");
+        }
+        try (InputStream originalStream = new FileInputStream(original);
+             InputStream compressedStream = new GZIPInputStream(new FileInputStream(compressedFile))) {
             int b1, b2;
             do {
-                b1 = i1.read();
-                b2 = i2.read();
+                b1 = originalStream.read();
+                b2 = compressedStream.read();
                 if(b1 != b2) {
-                    zipped.delete();
-                    return;
+                    compressedFile.delete();
+                    throw new IOException("Compression result not equal to original");
                 }
             } while(b1 > -1);
             original.delete();

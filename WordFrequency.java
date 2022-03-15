@@ -28,13 +28,13 @@ public class WordFrequency {
     };
 
     public static Map<String, Integer> wordFrequencies(Scanner s) {
-        Map<String, Integer> freqs = new HashMap<>();
+        Map<String, Integer> frequencies = new HashMap<>();
         while(s.hasNextLine()) {
             String line = s.nextLine().trim().toLowerCase();
             for(String[] repl: replacements) {
                 line = line.replaceAll(repl[0], repl[1]);
             }
-            line = line.replaceAll("'s\\b", ""); // In regex, \b is word boundary marker
+            line = line.replaceAll("'s\\b", ""); // \b is regex word boundary
             line = line.replaceAll("'ll\\b", " will");
             line = line.replaceAll("'t\\b", "");
             String wordSeparators = "[^a-z]+";
@@ -42,48 +42,16 @@ public class WordFrequency {
                 // Lines that start with the quote character will end up having an
                 // empty word at the front of the split line array. Thus this check.
                 if(word.length() != 0) {
-                    freqs.put(word, freqs.getOrDefault(word, 0) + 1);                
+                    frequencies.put(word, frequencies.getOrDefault(word, 0) + 1);
                 }
             }
         }
-        return freqs;
-    }
-    
-    // To make the later output nicely divided into lines of given length. 
-    private static class LinePrinter {
-        private final int lineMax; // Maximum desired length of a line.
-        private int lineLen; // Length of the current line.
-        private final PrintWriter out; // Where to direct the printed characters.
-        private boolean firstInLine = true; // Is the current word first in this line?
-        public LinePrinter(PrintWriter out, int lineMax) {
-            this.out = out;
-            this.lineMax = lineMax;
-        }
-        public void printWord(String word) {
-            if(lineLen + word.length() + (firstInLine? 0: 1) > lineMax) {
-                lineLen = 0;
-                out.println("");
-                firstInLine = true;
-            }
-            if(!firstInLine) { out.print(" "); lineLen++; }
-            out.print(word);
-            firstInLine = false;
-            lineLen += word.length();
-        }
-        public void lineBreak() {
-            if(lineLen > 0) {
-                out.println("");
-                out.flush();
-                lineLen = 0;
-                firstInLine = true;
-            }
-        }
+        return frequencies;
     }
     
     // For demonstration purposes, some word frequencies from "War and Peace".
     public static void main(String[] args) throws IOException {
-        Map<String, Integer> freqs = 
-            wordFrequencies(new Scanner(new File(FILENAME)));
+        Map<String, Integer> freqs = wordFrequencies(new Scanner(new File(FILENAME)));
         System.out.println("Found " + freqs.size() + " distinct words.\n");
         System.out.println("Some occurrence counts are: ");
         String[] words = {
@@ -98,16 +66,18 @@ public class WordFrequency {
         // for equal frequency using the ordinary string comparison as secondary criterion.
         class FreqComparator implements Comparator<String> {
             public int compare(String word1, String word2) {
-                int f2 = freqs.get(word2);
                 int f1 = freqs.get(word1);
+                int f2 = freqs.get(word2);
                 return f2 != f1 ? (f1 < f2 ? +1 : -1) : word2.compareTo(word1);
             }
         }
         
-        // Create an arraylist of words that we can sort them.
+        // Create an arraylist of words so that we can sort these words by frequency.
         ArrayList<String> wordList = new ArrayList<>(freqs.keySet());
         // Sort the arraylist using our frequency comparator.
         wordList.sort(new FreqComparator());
+
+        // Let's print out the results.
         System.out.println("\nThe three hundred most frequent words of 'War and Peace' are:\n");
         LinePrinter lp = new LinePrinter(new PrintWriter(System.out), 80);
         for(int i = 0; i < 300; i++) {
@@ -117,10 +87,10 @@ public class WordFrequency {
         lp.lineBreak();
         System.out.println("\nHere are the words that occur only once in 'War and Peace':\n");
         int i = wordList.size() - 1;
-        while(true) {
-            String word = wordList.get(i--);
-            if(freqs.get(word) > 1) { break; }
+        String word = wordList.get(i--);
+        while(freqs.get(word) == 1) {
             lp.printWord(word);
+            word = wordList.get(i--);
         }
         lp.lineBreak();
     }
