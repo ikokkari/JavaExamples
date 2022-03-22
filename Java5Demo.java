@@ -12,7 +12,7 @@ import java.util.Queue;
 import static java.lang.Math.sqrt;
 import static java.lang.System.out;
 
-// Java 5 came out in 2005. Its features are no longer new, but part of the
+// Java 5 came out in 2005. Its features are no longer new, but established part of the
 // language. Pretty soon I will have students who are younger than Java 5.
 
 public class Java5Demo {
@@ -42,7 +42,7 @@ public class Java5Demo {
         }
     }
     
-    // Boxing and unboxing
+    // Boxing and unboxing demonstrated. IntelliJ IDEA will mark many of these redundant.
     public static void boxingDemo() {
         Integer a = 42;     // Boxing primitive to wrapper, small enough to be in cache.
         Integer b = 42;     // Boxing primitive to wrapper, reuses 42 from cache.
@@ -53,7 +53,7 @@ public class Java5Demo {
         
         Integer d = 84;     // Boxing primitive to wrapper, small enough to be in cache.
         Integer e = new Integer(84); // new always creates a new object, no matter what
-        assert d != e;      // Memory address comparison, guaranteed different here.
+        assert d != e;      // Memory address comparison, guaranteed unequal here.
         assert d.equals(e); // Wrapper vs. wrapper, object content comparison.
         assert a + b == e;  // Arithmetic automatically unboxes before the operation.
         assert 2 * a == e;
@@ -70,9 +70,9 @@ public class Java5Demo {
     
     // Varargs
     public static String concatenate(Object... rest) {
-        String result = "";
-        for(Object o: rest) { result += o + " "; }
-        return result;
+        StringBuilder result = new StringBuilder();
+        for(Object o: rest) { result.append(o).append(" "); }
+        return result.toString();
     }
     
     // C-style printf
@@ -80,7 +80,7 @@ public class Java5Demo {
         int a = 99; char b = 'x'; String c = "Hello";
         out.printf("Now a = %d, b = %c and c = %s\n", a, b, c);    
         double d = 1234.56789;
-        out.printf("With two decimal places, sqrt(d) = %.2f\n", sqrt(d));
+        out.printf("To two decimal places, sqrt(d) = %.2f\n", sqrt(d));
     }
     
     // Adapted from a thread in Stack Overflow. Truly evil.
