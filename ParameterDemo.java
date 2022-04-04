@@ -28,4 +28,9 @@ public class ParameterDemo {
         fooArray(a);
         System.out.println("After call, a[42] is " + a[42] + "."); // 3
     }
+
+    public static void main(String[] args) {
+        demoPrimitive();
+        demoArray();
+    }
 }
