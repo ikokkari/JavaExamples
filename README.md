@@ -1,6 +1,6 @@
 # CCPS 209 Computer Science II
 
-Course outline, lecture material and example code for *CCPS 209 Computer Science II*, as it is taught by [Ilkka Kokkarinen](http://scs.ryerson.ca/~ikokkari) for the Chang School of Continuing Education, Ryerson University, Toronto, Ontario. For the present implementation of this course, consult the instructor for the grading and other current policies. 
+Course outline, lecture material and example code for *CCPS 209 Computer Science II*, as it is taught by [Ilkka Kokkarinen](http://scs.ryerson.ca/~ikokkari) for the Chang School of Continuing Education, Toronto Metropolitan University, Canada. For the present implementation of this course, consult the instructor for the grading and other current policies. 
 
 The outline for the course is in the document [Modules.pdf](https://github.com/ikokkari/JavaExamples/blob/master/CCPS%20209%20Modules.pdf), and the lecture notes are in the document [CCPS 209 Course Notes.pdf](https://github.com/ikokkari/JavaExamples/blob/master/CCPS%20209%20Course%20Notes.pdf).
 
