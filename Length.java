@@ -95,8 +95,8 @@ public class Length {
         System.out.println("b in centimeters is " + b.getCentimeters()); // 20
         System.out.println("b in inches is " + b.getInches()); // 7.874015748031496
         a.setInches(20);
-        System.out.println("a in centimeters is " + a.getCentimeters()); // 20
-        System.out.println("a in inches is " + a.getInches()); // 7.874015748031496
+        System.out.println("a in centimeters is " + a.getCentimeters()); // 50.8
+        System.out.println("a in inches is " + a.getInches()); // 20.0
         System.out.println("b in centimeters is " + b.getCentimeters()); // 20
         System.out.println("b in inches is " + b.getInches()); // 7.874015748031496
         // See the DataDemo example to find out how to print decimal numbers up
