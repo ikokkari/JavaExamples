@@ -16,8 +16,8 @@ public class Fraction implements Comparable<Fraction> {
     private BigInteger den; // the denominator, should always be > 0
     
     // The getter methods. Note that we don't have setter methods, since the Fraction
-    // class is immutable, which means that an object, once created, cannot change.
-    // (This has various advantages which may not be intuitive right now.)
+    // class is immutable, which means that an object, once created, cannot change its
+    // state. (Immutability has various advantages that aren't intuitive quite yet.)
     
     /**
      * Return the numerator of this fraction.
@@ -178,8 +178,8 @@ public class Fraction implements Comparable<Fraction> {
     public static void main(String[] args) {
         Fraction a = new Fraction(3, 7); // 3/7
         Fraction b = new Fraction(-2, 18); // -1/9
-        Fraction c = a.add(b);
-        c = c.multiply(a.subtract(b));
+        Fraction c = a.add(b); // c = a + b
+        c = c.multiply(a.subtract(b)); // c = c * (a-b)
         System.out.println("a is now " + a);
         System.out.println("b is now " + b);
         System.out.println("c is now " + c);
