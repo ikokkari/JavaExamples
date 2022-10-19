@@ -19,7 +19,10 @@ public class CollectionsDemo {
         TreeSet<Integer> treeSetOne = new TreeSet<>();
         
         // First, the dynamic set operations add, remove and contains.
-        treeSetOne.add(42); treeSetOne.add(99); treeSetOne.add(99);
+        treeSetOne.add(42);
+        treeSetOne.add(99);
+        treeSetOne.add(17); // Despite added last, will be iterated over first.
+        treeSetOne.add(99); // Adding same element second time does nothing.
         System.out.println("Our example treeset: " + treeSetOne); // decent toString()
         
         // Dumb way to do the following. Used here only for demonstration purposes.
@@ -28,6 +31,8 @@ public class CollectionsDemo {
             if(treeSetOne.contains(i)) { System.out.println("Element " + i + " was found"); }
         }
         treeSetOne.remove(42);
+        treeSetOne.remove(42); // Not an error, just does nothing.
+        treeSetOne.remove(17);
         System.out.println("Looking for elements in the treeset again.");
         for(int i = 0; i < 100; i++) {
             if(treeSetOne.contains(i)) { System.out.println("Element " + i + " was found"); }
@@ -155,10 +160,13 @@ public class CollectionsDemo {
     }
     
     public static void fibonacciDemo() {
+        System.out.println("\n\nFibonacci demo begins.");
+        System.out.println("Printing first 50 Fibonacci numbers duplicated.");
         Iterator<BigInteger> it = new DuplicatingIterator<>(new FibonacciIterator(), 3);
         for(int i = 0; i < 50; i++) {
             System.out.println(it.next());
         }
+        System.out.println("Fibonacci demo ends.\n\n");
     }
     
     // The utility interface Comparator<T> can be used to define Strategy objects
@@ -234,5 +242,6 @@ public class CollectionsDemo {
         basicOperations();
         algorithmsDemo();
         demonstrateComparators();
+        fibonacciDemo();
     }
 }
