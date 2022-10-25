@@ -79,7 +79,7 @@ public class ShapePanel extends JPanel {
         Area elli = new Area(new Ellipse2D.Double(350, 50, 70, 140));
         // AffineTransform has factory methods to create all kinds of transforms. Note that
         // the rotation angle is radians in [0, 2*Math.PI] instead of angles in [0, 360].
-        AffineTransform trans = AffineTransform.getRotateInstance(-Math.PI / 20, 385, 120);
+        AffineTransform trans = AffineTransform.getRotateInstance(Math.toRadians(13), 385, 120);
         elli = elli.createTransformedArea(trans);
         // Constructive solid geometry operations add, subtract, intersect and exclusiveOr
         // can create complex shapes by combining simpler shapes together. 
