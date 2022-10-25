@@ -104,7 +104,7 @@ public class ShapePanel extends JPanel {
         int points = 10; // Try out different values to see how these formulas work.
         int n = 2 * points; // As a polygon, a ten-point star has twenty corner points.
         for(int i = 0; i < n; i++) {
-            double a = i * 2 * Math.PI / n; // Angles are given in radians.
+            double a = i * 2 * Math.toRadians(360) / n; // Angles are given in radians.
             double r = (i % 2 == 0) ? 100 : 50; // Tip or groove?
             if(i == 0) { // Starting point of the polygon starts the path.
                 path.moveTo(CENTER_X + r * Math.cos(a), CENTER_Y + r * Math.sin(a));
