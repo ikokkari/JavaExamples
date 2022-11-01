@@ -13,7 +13,7 @@ public class ExceptionDemo {
     }
 
     // Calls failOne but does not handle the exception that it can throw.
-    // Therefore this method must also declare that it may throw IOExceptions.
+    // Therefore, this method must declare that it may throw IOExceptions.
     private static void failTwo() throws IOException {
         try {
             System.out.println("Calling method failOne from failTwo.");
@@ -78,5 +78,9 @@ public class ExceptionDemo {
                 break;
             }
         }
+    }
+
+    public static void main(String[] args) {
+        demo();
     }
 }
