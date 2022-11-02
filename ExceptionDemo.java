@@ -30,7 +30,8 @@ public class ExceptionDemo {
     public static void demo() {
         try {
             failTwo(); // fails by calling something that fails
-        } catch(IOException e) {
+        }
+        catch(IOException e) {
             System.out.println("Caught an exception " + e);
             System.out.println("Printing the stack trace: ");
             StackTraceElement[] trace = e.getStackTrace();
@@ -48,10 +49,10 @@ public class ExceptionDemo {
     // Will this method return 0 or 1 when called? What do you think?
     public static int returnDemo() {
         try {
-            return 0;
+            return 42;
         }
         finally {
-            return 1;
+            return 99;
         }
     }
     
@@ -62,25 +63,36 @@ public class ExceptionDemo {
             throw new IllegalStateException("first"); //unchecked
         }
         finally {
-            throw new IOException("second"); // checked
+            try {
+                throw new IOException("second"); // checked
+            }
+            catch(IOException ignored) { } // go away
         }
     }
     
     // Does this method terminate, or is it an infinite loop? Who will win
     // this game of tug-of-war between these two opposing forces? What will
-    // happen if you swap the continue and break?
+    // happen if you swap the statements continue and break?
     public static void whileDemo() {
         while(true) {
             try {
-                continue;
+                break;
             }
             finally {
-                break;
+                continue;
             }
         }
     }
 
     public static void main(String[] args) {
         demo();
+        System.out.println(returnDemo());
+        try {
+            throwDemo();
+        }
+        catch(Exception e) {
+            System.out.println("Caught exception: " + e);
+        }
+        // whileDemo(); // uncomment to see
     }
 }
