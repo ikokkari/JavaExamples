@@ -35,15 +35,18 @@ public class Java5Demo {
     // Author annotation were not retained until runtime, but discarded
     // after compilation, it would not show up in the following output.
     public static void annotationDemo() {
+        System.out.println("Starting annotationDemo.");
         AnnotationTest at = new AnnotationTest();
         Class<? extends AnnotationTest> c = at.getClass();
         for(Annotation ant: c.getAnnotations()) {
-            System.out.print("Found annotation: " + ant);
+            System.out.println("Found annotation: " + ant);
         }
+        System.out.println("Finished annotationDemo.\n");
     }
     
     // Boxing and unboxing demonstrated. IntelliJ IDEA will mark many of these redundant.
     public static void boxingDemo() {
+        System.out.println("Starting boxingDemo.");
         Integer a = 42;     // Boxing primitive to wrapper, small enough to be in cache.
         Integer b = 42;     // Boxing primitive to wrapper, reuses 42 from cache.
         int c = 42;         // Primitive int value.
@@ -66,6 +69,7 @@ public class Java5Demo {
         assert f.equals(g); // Wrapper vs. wrapper, object content comparison.
         
         System.out.println("Sleep well. Integers still work the way they are supposed to.");
+        System.out.println("Finished boxingDemo.\n");
     }
     
     // Varargs
@@ -77,27 +81,32 @@ public class Java5Demo {
     
     // C-style printf
     public static void printfDemo() {
+        System.out.println("Starting printfDemo.");
         int a = 99; char b = 'x'; String c = "Hello";
         out.printf("Now a = %d, b = %c and c = %s\n", a, b, c);    
         double d = 1234.56789;
         out.printf("To two decimal places, sqrt(d) = %.2f\n", sqrt(d));
+        System.out.println("Finished printfDemo.\n");
     }
     
     // Adapted from a thread in Stack Overflow. Truly evil.
-    public static void orwellian() throws Exception {
+    public static void orwellianDemo() throws Exception {
+        System.out.println("Starting orwellianDemo.");
         Class<?> cache = Integer.class.getDeclaredClasses()[0];
         Field c = cache.getDeclaredField("cache");
         c.setAccessible(true);
         Integer[] array = (Integer[]) c.get(cache);
         array[132] = array[133];
         // Two plus two is whatever The Party says it is, Winston.
-        System.out.printf("%d", 2 + 2); // 5
+        System.out.printf("Two plus two equals %d.\n", 2+2); // 5
         // Even the basic laws of arithmetic must yield to doublethink.
+        System.out.println("Finished orwellianDemo.\n");
     }
     
     // Queue collections: an absurdity in terms. Saying that a Queue is-a
     // Collection is just like saying that a Car is-an Engine.
     public static void queueDemo() {
+        System.out.println("Starting queueDemo.");
         Queue<Integer> aq = new PriorityQueue<>();
         aq.add(7); aq.offer(2); aq.offer(3);
         out.println("head element: " + aq.peek()); // 2
@@ -105,9 +114,23 @@ public class Java5Demo {
         out.println("head element: " + aq.peek()); // 3
         out.println("popped element: " + aq.remove()); // 3
         out.println("popped element: " + aq.remove()); // 7
+        System.out.println("Finished queueDemo.\n");
     }
     
     // That said, PriorityQueue<T> often comes handy in clever algorithms.
     // Just don't pretend that it is also some kind of Collection. (Or a
     // floor wax. Or a dessert topping.)
+
+    public static void main(String[] args) {
+        annotationDemo();
+        boxingDemo();
+        printfDemo();
+        queueDemo();
+        try {
+            orwellianDemo();
+        } catch(Exception e) {
+            System.out.println("Caught exception " + e + " from orwellianDemo.");
+        }
+
+    }
 }
