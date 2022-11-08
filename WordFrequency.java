@@ -12,7 +12,7 @@ public class WordFrequency {
     // To run this program, change the FILENAME to some text file that you have.
     private static final String FILENAME = "warandpeace.txt";
 
-    private static final String[][] replacements = new String[][]{
+    private static final String[][] replacements = {
             {"doesn't", "does not"},
             {"don't", "do not"},
             {"you're", "you are"},
@@ -31,8 +31,8 @@ public class WordFrequency {
         Map<String, Integer> frequencies = new HashMap<>();
         while(s.hasNextLine()) {
             String line = s.nextLine().trim().toLowerCase();
-            for(String[] repl: replacements) {
-                line = line.replaceAll(repl[0], repl[1]);
+            for(String[] replacement: replacements) {
+                line = line.replaceAll(replacement[0], replacement[1]);
             }
             line = line.replaceAll("'s\\b", ""); // \b is regex word boundary
             line = line.replaceAll("'ll\\b", " will");
@@ -40,7 +40,7 @@ public class WordFrequency {
             String wordSeparators = "[^a-z]+";
             for(String word: line.split(wordSeparators)) {
                 // Lines that start with the quote character will end up having an
-                // empty word at the front of the split line array. Thus this check.
+                // empty word at the front of the split line array. Thus, this check.
                 if(word.length() != 0) {
                     frequencies.put(word, frequencies.getOrDefault(word, 0) + 1);
                 }
@@ -51,29 +51,29 @@ public class WordFrequency {
     
     // For demonstration purposes, some word frequencies from "War and Peace".
     public static void main(String[] args) throws IOException {
-        Map<String, Integer> freqs = wordFrequencies(new Scanner(new File(FILENAME)));
-        System.out.println("Found " + freqs.size() + " distinct words.\n");
+        Map<String, Integer> frequencies = wordFrequencies(new Scanner(new File(FILENAME)));
+        System.out.println("Found " + frequencies.size() + " distinct words.\n");
         System.out.println("Some occurrence counts are: ");
         String[] words = {
             "chicken", "prince", "Russia", "train", "I", "supercalifragilisticexpialidocius"
         };
         for(String word: words) {
             word = word.toLowerCase();
-            System.out.println(word + ": " + (freqs.getOrDefault(word, 0)));
+            System.out.println(word + ": " + (frequencies.getOrDefault(word, 0)));
         }
         
         // Custom comparator to compare strings by their frequency in the map, resolving cases
         // for equal frequency using the ordinary string comparison as secondary criterion.
         class FreqComparator implements Comparator<String> {
             public int compare(String word1, String word2) {
-                int f1 = freqs.get(word1);
-                int f2 = freqs.get(word2);
+                int f1 = frequencies.get(word1);
+                int f2 = frequencies.get(word2);
                 return f2 != f1 ? (f1 < f2 ? +1 : -1) : word2.compareTo(word1);
             }
         }
         
         // Create an arraylist of words so that we can sort these words by frequency.
-        ArrayList<String> wordList = new ArrayList<>(freqs.keySet());
+        ArrayList<String> wordList = new ArrayList<>(frequencies.keySet());
         // Sort the arraylist using our frequency comparator.
         wordList.sort(new FreqComparator());
 
@@ -82,13 +82,13 @@ public class WordFrequency {
         LinePrinter lp = new LinePrinter(new PrintWriter(System.out), 80);
         for(int i = 0; i < 300; i++) {
             String word = wordList.get(i);
-            lp.printWord(word + " (" + freqs.get(word) + ")");
+            lp.printWord(word + " (" + frequencies.get(word) + ")");
         }
         lp.lineBreak();
         System.out.println("\nHere are the words that occur only once in 'War and Peace':\n");
-        int i = wordList.size() - 1;
+        int i = wordList.size()-1;
         String word = wordList.get(i--);
-        while(freqs.get(word) == 1) {
+        while(frequencies.get(word) == 1) {
             lp.printWord(word);
             word = wordList.get(i--);
         }
