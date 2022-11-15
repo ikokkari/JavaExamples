@@ -46,16 +46,16 @@ public class Pair<T, U> {
     @Override public int hashCode() {
         // When creating hash functions, bit shifts and xor are your helpful friends.
         // Hash code of object is computed based on precisely those fields that can
-        // affect the equality comparison of those objects using the equals method.
+        // affect the equality comparison of those objects under the equals method.
         int f1 = getFirst().hashCode();
         int f2 = getSecond().hashCode();
         // Swap top and bottom nybbles so that pairs (a, b) and (b, a) hash differently.
         // (This part is optional, but can't really hurt either.)
-        f1 = (f1 >> 16) | (f1 << 16); 
+        f1 = (f1 >> 16) | ((f1 & 0xFFFF) << 16);
         // Combine the hash codes of these fields with the exclusive or operator ^.
         int result = f1 ^ f2;
         // Last, use the bitwise and to ensure that the highest (sign) bit is zero.
-        return result & 0x7fffffff;  
+        return result & 0x7FFFFFFF;
     }
     
     // Read the words from War and Peace and count how many different hash codes we
