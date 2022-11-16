@@ -94,7 +94,7 @@ public class Java5Demo {
         System.out.println("Starting orwellianDemo.");
         Class<?> cacheType = Integer.class.getDeclaredClasses()[0];
         Field c = cacheType.getDeclaredField("cache");
-        c.setAccessible(true);
+        c.setAccessible(true); // Tell reflection not to care about field c being private.
         Integer[] cachedIntegers = (Integer[]) c.get(cacheType);
         cachedIntegers[132] = cachedIntegers[133]; // 4 is at position 132, 5 is at 133
         // Two plus two is whatever The Party says it is, Winston.
@@ -131,6 +131,5 @@ public class Java5Demo {
         } catch(Exception e) {
             System.out.println("Caught exception " + e + " from orwellianDemo.");
         }
-
     }
 }
