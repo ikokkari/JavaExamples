@@ -92,11 +92,11 @@ public class Java5Demo {
     // Adapted from a thread in Stack Overflow. Truly evil.
     public static void orwellianDemo() throws Exception {
         System.out.println("Starting orwellianDemo.");
-        Class<?> cache = Integer.class.getDeclaredClasses()[0];
-        Field c = cache.getDeclaredField("cache");
+        Class<?> cacheType = Integer.class.getDeclaredClasses()[0];
+        Field c = cacheType.getDeclaredField("cache");
         c.setAccessible(true);
-        Integer[] array = (Integer[]) c.get(cache);
-        array[132] = array[133];
+        Integer[] cachedIntegers = (Integer[]) c.get(cacheType);
+        cachedIntegers[132] = cachedIntegers[133]; // 4 is at position 132, 5 is at 133
         // Two plus two is whatever The Party says it is, Winston.
         System.out.printf("Two plus two equals %d.\n", 2+2); // 5
         // Even the basic laws of arithmetic must yield to doublethink.
