@@ -6,7 +6,7 @@ import java.util.HashSet;
 // An immensely useful class that for some reason is missing from
 // the Java standard library. (Google "why java has no pair class")
 
-public class Pair<T, U> {
+public final class Pair<T, U> {
     
     // A generic class can have static members, but they can't
     // use the type arguments in any way (because of erasure).
@@ -27,7 +27,8 @@ public class Pair<T, U> {
     
     public T getFirst() { return first; }
     public U getSecond() { return second; }
-    // Uncomment these two lines if you would prefer a mutable pair.
+
+    // Uncomment these two lines if you prefer a mutable pair.
     // public void setFirst(T first) { this.first = first; }
     // public void setSecond(U second) { this.second = second; }
     
@@ -35,10 +36,11 @@ public class Pair<T, U> {
         return "[" + getFirst() + ", " + getSecond() + "]";
     }
     
-    @Override public boolean equals(Object o) {
-        if(o instanceof Pair) { // The most we can check at runtime.
-            Pair p = (Pair) o; // Downcast to Pair to get to use getFirst and getSecond.
-            return this.getFirst().equals(p.getFirst()) && this.getSecond().equals(p.getSecond());
+    @Override public boolean equals(Object other) {
+        if(other instanceof Pair) { // The most we can check at runtime.
+            Pair otherPair = (Pair) other; // Downcast to Pair to access its getFirst and getSecond.
+            return this.getFirst().equals(otherPair.getFirst()) &&
+                    this.getSecond().equals(otherPair.getSecond());
         }
         else { return false; }
     }
@@ -47,20 +49,20 @@ public class Pair<T, U> {
         // When creating hash functions, bit shifts and xor are your helpful friends.
         // Hash code of object is computed based on precisely those fields that can
         // affect the equality comparison of those objects under the equals method.
-        int f1 = getFirst().hashCode();
-        int f2 = getSecond().hashCode();
-        // Swap top and bottom nybbles so that pairs (a, b) and (b, a) hash differently.
-        // (This part is optional, but can't really hurt either.)
-        f1 = (f1 >> 16) | ((f1 & 0xFFFF) << 16);
+        int h1 = getFirst().hashCode();
+        int h2 = getSecond().hashCode();
+        // Swap top and bottom halves of h1 so that pairs (a, b) and (b, a) will hash
+        // differently. (This part is optional, but can't really hurt us either.)
+        h1 = (h1 >> 16) | ((h1 & 0xFFFF) << 16);
         // Combine the hash codes of these fields with the exclusive or operator ^.
-        int result = f1 ^ f2;
+        int result = h1 ^ h2;
         // Last, use the bitwise and to ensure that the highest (sign) bit is zero.
         return result & 0x7FFFFFFF;
     }
     
-    // Read the words from War and Peace and count how many different hash codes we
-    // get for the (word, idx) pairs generated from that data. The higher that number is,
-    // the better your hash function in practice.
+    // Read all words from War and Peace and count how many hash codes we get for
+    // the (word, idx) pairs generated from that data. The higher that number is,
+    // the better your hash function works in practice with hash sets and maps.
     public static void main(String[] args) throws IOException {
         HashSet<Integer> seen = new HashSet<>();
         int wordNo = 0;

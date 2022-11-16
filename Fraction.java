@@ -140,7 +140,7 @@ public class Fraction implements Comparable<Fraction> {
         // As not to hash a/b and b/a to the same value, do some bitwise
         // arithmetic to one of their hash codes to break the symmetry.
         hd = (hd >> 16) ^ ~(hd << 16);
-        // Hash codes are often combined from pieces with bitwise arithmetic.
+        // Hash codes are best combined from pieces with bitwise xor.
         return hn ^ hd; // ^ is bitwise xor, not exponentiation.
     }
     
@@ -163,7 +163,7 @@ public class Fraction implements Comparable<Fraction> {
         else { return num + "/" + den; }
     }
     
-    // A private method for simplifying the initial value to lowest terms.
+    // A private method for simplifying the initial value to the lowest terms.
     private void simplify() { 
         if(den.signum() == -1) { // we want the denominator to always be positive
             den = den.negate(); num = num.negate();
