@@ -77,9 +77,9 @@ public class Sliders extends JPanel {
             if(COLOURS) {
                 Random rng = ThreadLocalRandom.current();
                 // Create a bright random colour, not some kind of bland pastel.
-                float hue = (float)(rng.nextDouble());
-                float saturation = (float)(rng.nextDouble() * 0.1 + 0.9);
-                float brightness = (float)(rng.nextDouble() * 0.4 + 0.6);
+                float hue = rng.nextFloat();
+                float saturation = rng.nextFloat() * 0.1f + 0.9f;
+                float brightness = rng.nextFloat() * 0.4f + 0.6f;
                 this.color = new Color(Color.HSBtoRGB(hue, saturation, brightness));
             }
             else { this.color = Color.BLACK; }
