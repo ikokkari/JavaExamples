@@ -42,14 +42,10 @@ public class Sliders extends JPanel {
     private final Semaphore[][] permitToEnter;
     // The sliders that exist on the board.
     private final Slider[] sliders;
-    // Whether the game should still be running.
+    // Whether the animation should still be running.
     private volatile boolean running = true;
-    // Animation timer for the component.
-    private final javax.swing.Timer timer;
     // The possible directions that an individual slider can move to.
-    private static final int[][] DIRS = {
-        {1, 0}, {0, 1}, {-1, 0}, {0, -1}
-    };
+    private static final int[][] DIRS = { {1, 0}, {0, 1}, {-1, 0}, {0, -1} };
     
     // The class that represents an individual slider.
     private class Slider {
@@ -95,10 +91,10 @@ public class Sliders extends JPanel {
             this.thread = new Thread(() -> { // Runnable object as a lambda.
                 try {
                     while(running) {
-                        Thread.sleep(20);
+                        long startTime = System.currentTimeMillis();
                         if(moving) {                            
                             if(t <= 1.0) { // Movement is still incomplete.
-                                // Cosine interpolation to smooth the movement.
+                                // Cosine interpolation to smoothen the movement.
                                 double tt = (1 - Math.cos(t * Math.PI))/2;
                                 // The interpolated pixel coordinates.
                                 this.x = (1-tt)*sx + tt*tx;
@@ -129,13 +125,15 @@ public class Sliders extends JPanel {
                                         moving = true; t = 0;
                                     }
                                 }
-                                // Blocking semaphore acquire will end up in deadlock.
+                                // Blocking semaphore acquire will eventually cause a deadlock.
                                 else {
                                     permitToEnter[tx][ty].acquire();
                                     moving = true; t = 0;
                                 }
                             }
                         }
+                        long endTime = System.currentTimeMillis();
+                        Thread.sleep(Math.max(20, endTime - startTime));
                     }
                 }
                 catch(Exception ignored) { }
@@ -182,9 +180,16 @@ public class Sliders extends JPanel {
         }
         // Once all sliders have been placed on board, tell sliders to move.
         for(int i = 0; i < n; i++) { sliders[i].start(); }
-        // Animation timer to repaint this component at 50 fps.
-        timer = new javax.swing.Timer(20, ae -> repaint());
-        timer.start();
+        // Animation thread to repaint the component at 50 fps.
+        new Thread(() -> {
+            try {
+                while (running) {
+                    Thread.sleep(20);
+                    repaint();
+                }
+            }
+            catch(Exception ignored) { }
+        }).start();
     }
     
     /**
@@ -211,13 +216,12 @@ public class Sliders extends JPanel {
     
     // Terminates the animation and the slider threads.
     public void terminate() {
-        // Inform all sliders that they should wrap it up and go home.
+        // Inform all sliders and the animation thread that they should wrap it up.
         running = false;
-        // Stop the animation timer.
-        timer.stop();
-        // Make sure that threads waiting for semaphore permits will terminate.
-        for(Slider slider: sliders) { slider.thread.interrupt(); }
-        System.out.println("Sliders terminated");
+        // Interrupt the slider threads to get them out of semaphore waits.
+        for(Slider slider: sliders) {
+            slider.thread.interrupt();
+        }
     }
     
     public static void main(String[] args) {

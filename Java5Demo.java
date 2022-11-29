@@ -29,15 +29,15 @@ public class Java5Demo {
     
     // Let us use our new annotation type on a little class.
     @Author(name = "Ilkka Kokkarinen")
-    private static class AnnotationTest { /* whatevs */ }
+    private static class AnnotationDemo { /* whatevs */ }
     
     // And then use reflection to examine it at the runtime. If the
     // Author annotation were not retained until runtime, but discarded
     // after compilation, it would not show up in the following output.
     public static void annotationDemo() {
         System.out.println("Starting annotationDemo.");
-        AnnotationTest at = new AnnotationTest();
-        Class<? extends AnnotationTest> c = at.getClass();
+        AnnotationDemo at = new AnnotationDemo();
+        Class<? extends AnnotationDemo> c = at.getClass();
         for(Annotation ant: c.getAnnotations()) {
             System.out.println("Found annotation: " + ant);
         }
