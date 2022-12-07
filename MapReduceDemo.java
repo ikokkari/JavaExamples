@@ -117,7 +117,7 @@ public class MapReduceDemo {
             }
             public boolean test(T value) {
                 count = (count + 1) % limit;
-                return (count == 0);
+                return count == 0;
             }
         }
 
