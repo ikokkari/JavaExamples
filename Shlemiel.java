@@ -199,7 +199,9 @@ public class Shlemiel {
         // In many problems, we can do better by sorting the array first.
         Arrays.sort(a); // O(n log n) stage dominates asymptotic running time
         for(int i = 0; i < n; i++) { // O(n)
-            if(a[i] != i+1) { return false; }
+            if(a[i] != i+1) { // Verify that each position contains the expected element.
+                return false;
+            }
         }
         return true;
     }
@@ -214,10 +216,12 @@ public class Shlemiel {
     public static boolean containsAllNumbersLinear(int[] a, int n) {
         // For a linear time solution, trade memory for time: use a boolean
         // array to remember which values we have already seen. (Also, allocate
-        // one more element than needed to eliminate need for integer subtract.)
+        // one more element than needed to eliminate need for integer decrement.)
         boolean[] alreadySeen = new boolean[n + 1];
         for(int e : a) {
-            if(e < 1 || e > n || alreadySeen[e]) { return false; }
+            if(e < 1 || e > n || alreadySeen[e]) { // Short circuit evaluation of condition
+                return false;
+            }
             alreadySeen[e] = true;
         }
         return true;
@@ -231,7 +235,9 @@ public class Shlemiel {
     public static void removeShortStringsShlemiel(ArrayList<String> strings, int len) {
         int i = 0;
         while(i < strings.size()) {
-            if(strings.get(i).length() < len) { strings.remove(i); } // remove from middle is O(n)
+            if(strings.get(i).length() < len) {
+                strings.remove(i); // remove from middle is O(n)
+            }
             else { i++; } // advance only if skipping the current element
         }
         // Total worst case running time is O(n) * O(n) = O(n^2)
@@ -243,12 +249,14 @@ public class Shlemiel {
      * @param len The threshold length for a string to remain in the list.
      */
     public static void removeShortStrings(ArrayList<String> strings, int len) {
-        ArrayList<String> tmp = new ArrayList<String>();
+        ArrayList<String> buffer = new ArrayList<>();
         for(String e : strings) { // total of O(n) over n rounds
-            if(e.length() >= len) { tmp.add(e); } // O(1) amortized add to end
+            if(e.length() >= len) {
+                buffer.add(e); // O(1) amortized add to end
+            }
         }
         strings.clear(); // O(n) (references are set to null to enable garbage collection)
-        strings.addAll(tmp); // O(n)
+        strings.addAll(buffer); // O(n)
         // Total worst case running time is 3 * O(n) = O(n)
     }
 
