@@ -55,9 +55,8 @@ public class Shlemiel {
         int max = 1;        
         for(int i = 0; i < a.length - 1; i++) {
             int j = i + 1;
-            int len = 1;
-            while(j < a.length && a[j] > a[j-1]) { j++; len++; }
-            if(len > max) { max = len; }
+            while(j < a.length && a[j] > a[j-1]) { j++; }
+            if(j-i > max) { max = j-i; }
         }
         return max;
     }
@@ -74,8 +73,7 @@ public class Shlemiel {
         int max = 1; // The longest ascension that we have seen so far.
         for(int i = 1; i < a.length; i++) { // Start from second element
             if(a[i] > a[i-1]) {
-                curr++;
-                if(curr > max) { max = curr; }
+                if(++curr > max) { max = curr; }
             }
             else {
                 curr = 1;
@@ -111,8 +109,8 @@ public class Shlemiel {
         while(i < j) {
             int sum = a[i] + a[j];
             if(sum == x) { return true; }
-            else if(sum < x) { i++; } // smallest element is too small to work, advance left
-            else { j--; } // largest element too large to work, advance right            
+            else if(sum < x) { i++; } // smallest element is too small to work, advance from left
+            else { j--; } // largest element too large to work, advance from right
         }
         return false;        
     }
@@ -178,12 +176,14 @@ public class Shlemiel {
      * @return {@code true} if each number occurs exactly once, {@code false} otherwise.
      */
     public static boolean containsAllNumbersShlemiel(int[] a, int n) {
-        for(int i = 1; i <= n; i++) { // numbers to look for
-            boolean found = false;
+        outer:
+        for(int num = 1; num <= n; num++) { // numbers to look for
             for(int e: a) {
-                if(e == i) { found = true; break; }
+                if(e == num) {
+                    continue outer;
+                }
             }
-            if(!found) { return false; }
+            return false;
         }
         return true;
     }
@@ -196,7 +196,7 @@ public class Shlemiel {
      * @return {@code true} if each number occurs exactly once, {@code false} otherwise.
      */
     public static boolean containsAllNumbersSorting(int[] a, int n) {
-        // We can do better by sorting the array first.
+        // In many problems, we can do better by sorting the array first.
         Arrays.sort(a); // O(n log n) stage dominates asymptotic running time
         for(int i = 0; i < n; i++) { // O(n)
             if(a[i] != i+1) { return false; }
@@ -234,7 +234,7 @@ public class Shlemiel {
             if(strings.get(i).length() < len) { strings.remove(i); } // remove from middle is O(n)
             else { i++; } // advance only if skipping the current element
         }
-        // Total worst case running time is O(n) * O(n) = O(n ^ 2)
+        // Total worst case running time is O(n) * O(n) = O(n^2)
     }
     
     /**
@@ -292,19 +292,19 @@ public class Shlemiel {
      * @return Whether there exists a majority element.
      */
     public static boolean hasMajorityLinear(int[] items) {
-        int count = 0, curr = 0;
+        int edge = 0, candidate = 0;
         for(int e: items) {
-            if(count == 0) {
-                curr = e; count = 1;
+            if(edge == 0) {
+                candidate = e; edge = 1;
             }
             else {
-                count += (curr == e ? +1 : -1);
+                edge += (candidate == e ? +1 : -1);
             }
         }
-        // At this point, if there is a majority element, curr is it. So let's check.
-        int edge = 0;
+        // At this point, if there is a majority element, candidate is it. So let's check.
+        edge = 0;
         for(int e: items) {
-            edge += (curr == e ? +1 : -1);
+            edge += (candidate == e ? +1 : -1);
         }
         return edge > 0;
     }
