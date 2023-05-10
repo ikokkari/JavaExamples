@@ -22,25 +22,25 @@ public class ChatServer {
         public String nick; // Client's chosen nickname
         private final DatagramPacket clientPacket; // Client contact info
 
-        public void sendMessage(String message) {
-            try {
-                byte[] ba = message.getBytes();
-                clientPacket.setData(ba);
-                clientPacket.setLength(ba.length);
-                serverSocket.send(clientPacket);
-            } catch(IOException e) { System.out.println(e); }
+        public void sendMessage(String message) throws IOException {
+            byte[] bytes = message.getBytes();
+            clientPacket.setData(bytes);
+            clientPacket.setLength(bytes.length);
+            serverSocket.send(clientPacket);
         }
 
-        public Client(DatagramPacket dp, String nick) {            
+        public Client(DatagramPacket initialPacket, String nick) {
             this.nick = nick;
-            this.clientPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE,
-              dp.getAddress(), dp.getPort());
+            this.clientPacket = new DatagramPacket(
+                    new byte[PACKET_SIZE], PACKET_SIZE,
+                    initialPacket.getAddress(), initialPacket.getPort()
+            );
         }
     }
     
-    public ChatServer(int port) {       
+    public ChatServer(int serverPort) {
         try {
-            serverSocket = new DatagramSocket(port);
+            serverSocket = new DatagramSocket(serverPort);
             serverSocket.setSoTimeout(60000);
         }
         catch(Exception e) {
@@ -50,8 +50,8 @@ public class ChatServer {
         executorService.submit(new LogicThread());
     }
 
-    public void sendMessageToAll(String message) {
-        for(Client c: clients) { c.sendMessage(message); }
+    public void sendMessageToAll(String message) throws IOException {
+        for(Client client: clients) { client.sendMessage(message); }
     }
 
     // The background thread to implement the chat server's mainloop.
@@ -67,17 +67,17 @@ public class ChatServer {
                     String message = new String(bytes);
                     // Do what the message tells us to do.
                     if(message.startsWith("@JOIN")) {
-                        Client c = new Client(receivedPacket, message.substring(5));
-                        clients.add(c);
-                        sendMessageToAll("New client " + c.nick + " has joined the chat");
+                        Client client = new Client(receivedPacket, message.substring(5));
+                        clients.add(client);
+                        sendMessageToAll("New client " + client.nick + " has joined the chat");
                     }
                     else if(message.equals("@QUIT")) {
-                        for(Client c: clients) { // who wants to quit?
-                            if(c.clientPacket.getAddress().equals(receivedPacket.getAddress()) &&
-                               c.clientPacket.getPort() == receivedPacket.getPort()) {
-                                 sendMessageToAll(c.nick + " has quit the chat");
-                                 clients.remove(c);
-                                 break; // Can't continue iterating through collection once it has been modified
+                        for(Client client: clients) { // who wants to quit?
+                            if(client.clientPacket.getAddress().equals(receivedPacket.getAddress()) &&
+                               client.clientPacket.getPort() == receivedPacket.getPort()) {
+                                 clients.remove(client);
+                                 sendMessageToAll(client.nick + " has quit the chat");
+                                 break; // Can't continue iterating collection after mutation
                             }                        
                         }
                     }

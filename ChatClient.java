@@ -23,19 +23,19 @@ public class ChatClient extends JFrame {
     private DatagramPacket sentPacket;
     private DatagramSocket clientSocket;
     private volatile boolean running = true;
-    private ExecutorService es = Executors.newFixedThreadPool(1);
+    private ExecutorService executorService = Executors.newFixedThreadPool(1);
     
     // The method to send a message to the server. 
     private void sendMessage(String message) {
         try {
-            byte[] ba = message.getBytes();
-            sentPacket.setData(ba);
-            sentPacket.setLength(ba.length);
+            byte[] bytes = message.getBytes();
+            sentPacket.setData(bytes);
+            sentPacket.setLength(bytes.length);
             clientSocket.send(sentPacket);
         } catch(IOException e) { System.out.println("ChatClient error: " + e); }        
     }
     
-    public ChatClient(InetAddress address, int port, final String nick) {
+    public ChatClient(InetAddress serverAddress, int serverPort, final String nick) {
         // First, set up the desired Swing interface.
         JPanel topPanel = new JPanel();        
         JButton quit = new JButton("Quit");
@@ -56,7 +56,7 @@ public class ChatClient extends JFrame {
             clientSocket = new DatagramSocket();
             clientSocket.setSoTimeout(1000);
             receivedPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
-            sentPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, address, port);
+            sentPacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE, serverAddress, serverPort);
         } catch(Exception e) { 
             System.out.println("ChatClient error: " + e);
             return;
@@ -73,7 +73,8 @@ public class ChatClient extends JFrame {
             sendMessage("@QUIT");
             ChatClient.this.terminate();
         });
-        
+
+        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         this.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent we) {
                 sendMessage("@QUIT");
@@ -82,7 +83,7 @@ public class ChatClient extends JFrame {
         });
         
         /* A background thread to listen to the messages coming from the Server. */
-        es.submit(() -> {
+        executorService.submit(() -> {
             try {
                 while(running) {
                     try {
@@ -109,13 +110,16 @@ public class ChatClient extends JFrame {
     
     public void terminate() {
         running = false;
-        es.shutdownNow();
+        executorService.shutdownNow();
         this.dispose();
     }
     
     // For demonstration purposes.
-    public static void launch(int port, String nick) throws Exception {
-        new ChatClient(InetAddress.getLocalHost(), port, nick);   
+    public static void launch(InetAddress serverAddress, int serverPort, String nick) {
+        new ChatClient(serverAddress, serverPort, nick);
+    }
+    public static void launch(int serverPort, String nick) throws Exception {
+        launch(InetAddress.getLocalHost(), serverPort, nick);
     }
 
     public static void main(String[] args) throws Exception {
