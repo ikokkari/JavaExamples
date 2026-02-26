@@ -3,7 +3,12 @@ import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -12,395 +17,559 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.ArrayDeque;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Mandelbrot extends JPanel {
-    // The number of threads used to compute the image.
-    private static final int THREADS = 4;
-    // The size of this component in pixels.
-    private final int sizeP;
-    // The complex number at the top left corner of image.
-    private BigComplex top;
-    // The size of our current "peephole" to the complex plane.
-    private BigDecimal size;
-    // The size of a single pixel in this peephole.
-    private BigDecimal psize;
-    // The currently rendered image that is displayed to the user.
-    private BufferedImage display;
-    // The current selection box top (sx, sy) and bottom (bx, by).
-    private int sx = -1, sy = -1, bx, by;
-    // Timer to force regular repaints of the Swing component.
-    private final javax.swing.Timer timer;
-    // The frontier of the current active rendering.
-    private volatile PriorityBlockingQueue<Pixel> activeFrontier = null;
-    // The singleton poison pixel that orders its recipient to stop working.
-    private final Pixel POISON = new Pixel(-1, -1);
-    // A global mutex for synchronization for image pixels.
-    private final Semaphore pixelMutex = new Semaphore(1);
-    // The timestamp generator for pixel ages.
-    private static final AtomicInteger AGESTAMP = new AtomicInteger(0);
-    // Threshold radius for escape for the Mandelbrow iteration.
-    private static final BigDecimal THRESHOLD = new BigDecimal("4.0");
-    // Multiplier for iteration steps performed for each pixel at each turn.
-    private static final int IROUNDS = 300;
-    // Pixel skip when initializing the start pixels of the image.
-    private static final int EDGE_SKIP = 200;
-    // Change this value for interesting DFS effects. Must be a positive integer.
-    private static final int BUNCH = 100;
-    // The ExecutorService to manage the threads behind the scenes.
-    private static final ExecutorService es = Executors.newFixedThreadPool(THREADS);
-    // How often the screen image should be updated, delay in ms.
-    private static final int TIMER_FREQ = 20;
-    // The colours used to render completed pixels.
-    private static final int COLS = 1024;
+
+    // =======================================================================
+    // Configuration constants
+    // =======================================================================
+
+    // Number of worker threads for rendering.
+    private static final int THREADS = Runtime.getRuntime().availableProcessors();
+    // Iteration batch size per pixel per turn in the work queue.
+    private static final int IROUNDS = 400;
+    // Maximum total iterations before declaring a pixel "inside the set".
+    private static final int MAX_ITER = 20000;
+    // Pixel skip when seeding the initial edge frontier.
+    private static final int EDGE_SKIP = 150;
+    // Age-based direction rotation divisor (higher = broader DFS).
+    private static final int BUNCH = 80;
+    // Screen refresh interval in milliseconds.
+    private static final int TIMER_FREQ = 25;
+    // Zoom level below which we switch from double to BigDecimal arithmetic.
+    private static final double DOUBLE_PRECISION_LIMIT = 1e-13;
+
+    // Colour palette size (must be a power of 2 for fast modulo).
+    private static final int COLS = 2048;
     private static final int[] colours = new int[COLS];
-    // The neighbour directions from the current pixel.
+    // Neighbour offsets: right, down, left, up.
     private static final int[][] DIRS = { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
 
-    // Utility method to compute the pixel colour based on its escape count.
-    private static int getEscapeColour(int c) {
-        // Enforce symmetry to avoid ugly discontinuities.
-        c = (c / COLS) % 2 == 0 ? c % COLS: COLS - c % COLS - 1;
-        // Look up the colour from cache if it is already computed.
-        if(colours[c] == 0) {
-            double cc = Math.pow(c, .8);            
-            float hue = (float)(cc/50 - Math.floor(cc/50));            
-            float saturation = (float)(.6 + .4 * Math.sin(.53*cc + Math.cos(cc * 0.16)));
-            float brightness = (float)(.6 + .3 * Math.sin(-.47*cc) + .1*Math.sin(.27*cc - .1));
-            colours[c] = Color.HSBtoRGB(hue, saturation, brightness) & 0x00ffffff;            
+    // =======================================================================
+    // Instance fields
+    // =======================================================================
+
+    private final int sizeP;                     // Panel width/height in pixels
+    private BigComplex top;                      // Complex coord of top-left corner
+    private BigDecimal size;                     // Width of the view in the complex plane
+    private BigDecimal psize;                    // Size of one pixel in complex coords
+    private BufferedImage display;               // Current rendered image
+    private int sx = -1, sy = -1, bx, by;       // Mouse selection rectangle
+    private final javax.swing.Timer timer;       // Repaint timer
+
+    // Frontier for the current rendering pass.
+    private volatile PriorityBlockingQueue<Pixel> activeFrontier = null;
+    // Sentinel pixel that tells workers to stop.
+    private final Pixel POISON = new Pixel(-1, -1, false);
+    // Global age counter for pixel creation ordering.
+    private static final AtomicInteger AGESTAMP = new AtomicInteger(0);
+    // Thread pool.
+    private static final ExecutorService es = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors());
+
+    // Zoom history for undo.
+    private final Deque<BigDecimal[]> zoomHistory = new ArrayDeque<>();
+    // Show info overlay?
+    private boolean showInfo = true;
+    // Stats from current render.
+    private volatile int currentMaxIter = 0;
+    private volatile int escapedCount = 0;
+    private volatile int insideCount = 0;
+
+    // =======================================================================
+    // Colour palette (smooth continuous colouring)
+    // =======================================================================
+
+    private static int getEscapeColour(double smoothCount) {
+        // Map the smooth iteration count into the palette with interpolation.
+        double t = smoothCount % COLS;
+        if (t < 0) t += COLS;
+        int idx0 = (int) t;
+        int idx1 = (idx0 + 1) % COLS;
+        double frac = t - idx0;
+        // Enforce mirror symmetry to avoid palette discontinuities.
+        idx0 = mapIndex(idx0);
+        idx1 = mapIndex(idx1);
+        int c0 = getPaletteEntry(idx0);
+        int c1 = getPaletteEntry(idx1);
+        return lerpColour(c0, c1, frac);
+    }
+
+    private static int mapIndex(int c) {
+        // Mirror: 0..COLS-1 -> 0..COLS-1..0
+        c = c % (2 * COLS);
+        if (c >= COLS) c = 2 * COLS - 1 - c;
+        return Math.max(0, Math.min(c, COLS - 1));
+    }
+
+    private static int getPaletteEntry(int c) {
+        if (colours[c] == 0) {
+            double cc = Math.pow(c, 0.75);
+            float hue = (float)(cc / 60.0 - Math.floor(cc / 60.0));
+            float sat = (float)(0.6 + 0.35 * Math.sin(0.45 * cc + Math.cos(cc * 0.12)));
+            float bri = (float)(0.55 + 0.35 * Math.sin(-0.40 * cc) + 0.10 * Math.sin(0.22 * cc - 0.1));
+            colours[c] = Color.HSBtoRGB(hue, sat, bri) & 0x00FFFFFF;
         }
         return colours[c];
     }
 
-    // A class to represent the state of computation of an individual pixel.
-    private class Pixel {
-        public int x, y; // Image coordinates of this pixel.
-        public int iter; // How many iterations this pixel has gone through.
-        private final int age; // The creation time of this object.
-        public BigComplex c; // The original complex number that this pixel represents.
-        public BigComplex z; // The current value of the iteration of this pixel.
+    private static int lerpColour(int c0, int c1, double t) {
+        int r = (int)((1 - t) * ((c0 >> 16) & 0xFF) + t * ((c1 >> 16) & 0xFF));
+        int g = (int)((1 - t) * ((c0 >> 8)  & 0xFF) + t * ((c1 >> 8)  & 0xFF));
+        int b = (int)((1 - t) * ( c0        & 0xFF) + t * ( c1        & 0xFF));
+        return (r << 16) | (g << 8) | b;
+    }
 
-        public Pixel(int x, int y) {
+    // =======================================================================
+    // Pixel class: tracks the iteration state of a single pixel
+    // =======================================================================
+
+    private class Pixel {
+        final int x, y;
+        final int age;
+        final boolean useDouble;     // true = fast double path, false = BigDecimal
+        int iter;                    // Iterations completed so far.
+
+        // BigDecimal path state
+        BigComplex c, z;
+        // Double path state
+        double cr, ci, zr, zi;
+
+        Pixel(int x, int y, boolean useDouble) {
             this.x = x;
             this.y = y;
             this.age = AGESTAMP.incrementAndGet();
-            // Compute the complex number that this pixel represents.
-            if(this.x > -1) { // None for POISON, though.
-                BigDecimal cx = top.getRe().add(psize.multiply(new BigDecimal(x)));
-                BigDecimal cy = top.getIm().subtract(psize.multiply(new BigDecimal(y)));
-                this.z = this.c = new BigComplex(cx, cy);
+            this.useDouble = useDouble;
+            if (x >= 0) {
+                if (useDouble) {
+                    cr = top.getRe().doubleValue() + psize.doubleValue() * x;
+                    ci = top.getIm().doubleValue() - psize.doubleValue() * y;
+                    zr = cr;
+                    zi = ci;
+                } else {
+                    BigDecimal cx = top.getRe().add(psize.multiply(new BigDecimal(x)), BigComplex.mc);
+                    BigDecimal cy = top.getIm().subtract(psize.multiply(new BigDecimal(y)), BigComplex.mc);
+                    this.z = this.c = new BigComplex(cx, cy);
+                }
             }
         }
 
-        // Iterate this pixel some number of rounds. Returns -iter if pixel did not escape,
-        // otherwise returns the escape count as positive number.
-        public int iterate(int rounds) {
-            BigComplex zp = z;
-            for(int r = 0; r < rounds; r++) {
-                // z = z * z + c, original Mandelbrot formula.
-                zp = zp.multiply(zp).add(c); 
-                
-                // You can also try cubic Mandelbrot and other powers, as seen in the
-                // Wikipedia page https://en.wikipedia.org/wiki/Multibrot_set
-                //zp = (zp.multiply(zp).multiply(zp).subtract(zp)).add(c);
-                
-                iter++;
-                BigDecimal real = zp.getRe();
-                BigDecimal imag = zp.getIm();
-                BigDecimal d = real.multiply(real).add(imag.multiply(imag));
-                if(d.compareTo(THRESHOLD) > 0) {
-                    z = c = null; // Allow garbage collection release those.
-                    return iter; // Iteration of this pixel completed.
+        /**
+         * Iterate this pixel for up to 'rounds' more steps.
+         * Returns: positive double = smooth escape count (pixel escaped).
+         *          negative double  = -(total iterations so far), not escaped yet.
+         */
+        double iterate(int rounds) {
+            int limit = Math.min(iter + rounds, MAX_ITER);
+            int toRun = limit - iter;
+            if (toRun <= 0) return -iter; // Already at max.
+
+            if (useDouble) {
+                // Inline the hot loop so we can track zr/zi state across calls.
+                double lzr = zr, lzi = zi;
+                double zr2 = lzr * lzr, zi2 = lzi * lzi;
+                int i = iter;
+                int end = iter + toRun;
+                while (zr2 + zi2 <= 65536.0 && i < end) {
+                    lzi = 2.0 * lzr * lzi + ci;
+                    lzr = zr2 - zi2 + cr;
+                    zr2 = lzr * lzr;
+                    zi2 = lzi * lzi;
+                    i++;
                 }
+                zr = lzr; zi = lzi; iter = i;
+                if (zr2 + zi2 > 65536.0) {
+                    double log_zn = Math.log(zr2 + zi2) / 2.0;
+                    double nu = Math.log(log_zn / Math.log(2.0)) / Math.log(2.0);
+                    return iter + 1.0 - nu; // Smooth escape count.
+                }
+                return -iter;
+            } else {
+                // BigDecimal path (original logic, no smooth colouring).
+                BigComplex zp = z;
+                BigDecimal threshold = new BigDecimal("65536");
+                for (int r = 0; r < toRun; r++) {
+                    zp = zp.multiply(zp).add(c);
+                    iter++;
+                    BigDecimal re = zp.getRe();
+                    BigDecimal im = zp.getIm();
+                    BigDecimal d = re.multiply(re).add(im.multiply(im));
+                    if (d.compareTo(threshold) > 0) {
+                        z = c = null;
+                        // Approximate smooth colouring.
+                        double log_zn = Math.log(re.doubleValue() * re.doubleValue()
+                                + im.doubleValue() * im.doubleValue()) / 2.0;
+                        double nu = Math.log(log_zn / Math.log(2)) / Math.log(2);
+                        return iter + 1.0 - nu;
+                    }
+                }
+                z = zp;
+                return -iter;
             }
-            z = zp;
-            return -iter; // Iteration of this pixel is not yet done.
         }
     }
 
-    // Strategy classes to decide which pixel from the priority queue should be iterated
-    // next. Nice little example of the template method design pattern where subclasses
-    // implement some step of an algorithm in a different way.
+    // =======================================================================
+    // Pixel comparators (DFS / BFS frontier ordering)
+    // =======================================================================
 
     private abstract class PixelComparator implements Comparator<Pixel> {
-        @Override final public int compare(Pixel p1, Pixel p2) {
-            // Poison pixel is always the first in line.
-            if(p1 == POISON) { return -1; }
-            if(p2 == POISON) { return +1; }
-            // The pixel that has been iterated the least will be next in line.
-            if(p1.iter < p2.iter) { return -1; }
-            if(p1.iter > p2.iter) { return +1; }
-            // Otherwise defer the job to the template method step.
+        @Override
+        public final int compare(Pixel p1, Pixel p2) {
+            if (p1 == POISON) return -1;
+            if (p2 == POISON) return +1;
+            // Prioritize pixels with fewer iterations.
+            if (p1.iter != p2.iter) return Integer.compare(p1.iter, p2.iter);
             return comparePixels(p1, p2);
         }
-        // Template method pattern: subclasses must implent this comparison method.
         protected abstract int comparePixels(Pixel p1, Pixel p2);
     }
 
     private class DFSComparator extends PixelComparator {
-        @Override public int comparePixels(Pixel p1, Pixel p2) {
-            return p2.age - p1.age; // DFS ordering of pixel ages
+        @Override protected int comparePixels(Pixel p1, Pixel p2) {
+            return Integer.compare(p2.age, p1.age); // Newer first
         }
     }
 
     private class BFSComparator extends PixelComparator {
-        @Override public int comparePixels(Pixel p1, Pixel p2) {
-            return p1.age - p2.age; // BFS ordering of pixel ages
+        @Override protected int comparePixels(Pixel p1, Pixel p2) {
+            return Integer.compare(p1.age, p2.age); // Older first
         }
     }
 
-    // Objects of this class represent the context in which Mandelbrot rendering takes place.
+    // =======================================================================
+    // Rendering context and worker
+    // =======================================================================
+
     private class RenderingContext {
-       // The priority queue that stores the frontier of active pixels.
-       public PriorityBlockingQueue<Pixel> localFrontier;
-       // The display into which the escaped pixels are rendered.
-       public BufferedImage localDisplay;
-       // The boolean array that keeps track of which pixels are active.
-       public boolean[][] localFound;
-       // Constructor to initialize the fields.
-       public RenderingContext(PriorityBlockingQueue<Pixel> frontier, BufferedImage display,
-       boolean[][] found) {
-           this.localFrontier = frontier;
-           this.localDisplay = display;
-           this.localFound = found;
-       }
+        final PriorityBlockingQueue<Pixel> frontier;
+        final BufferedImage image;
+        final boolean[][] found;
+
+        RenderingContext(PriorityBlockingQueue<Pixel> frontier,
+                         BufferedImage image, boolean[][] found) {
+            this.frontier = frontier;
+            this.image = image;
+            this.found = found;
+        }
     }
-    
-    // A Callable task to perform rendering of pixels into the current image.
 
     private class Renderer implements Callable<Integer> {
-        // The context in which this rendering happens.
-        private final RenderingContext context;
-        // The count of how many pixels were processed.
+        private final RenderingContext ctx;
         private int pixelCount = 0;
 
-        public Renderer(RenderingContext context) {
-            this.context = context;
-        }
+        Renderer(RenderingContext ctx) { this.ctx = ctx; }
 
+        @Override
         public Integer call() {
-            // In an infinite loop, repeatedly pop the next pixel from the queue
-            // of remaining pixels and iterate that pixel one more round. If it escapes,
-            // colour the pixel, otherwise push that pixel back to the queue. We must
-            // take care the synchronize the access to the priority queues of threads
-            // because PriorityQueue<T> itself, as most collections, is not thread safe.
-            
             try {
-                while(context.localFrontier.size() > 0) {
-                    Pixel p = context.localFrontier.take(); // The pixel to process next.
-                    if(p == POISON) {
-                        // Put the poison back for the next guy.
-                        context.localFrontier.offer(POISON); 
-                        break; // And this task is done.
+                while (ctx.frontier.size() > 0) {
+                    Pixel p = ctx.frontier.take();
+                    if (p == POISON) {
+                        ctx.frontier.offer(POISON);  // Re-poison for other workers.
+                        break;
                     }
-                    int c = p.iterate(IROUNDS);
-                    if(c > -1) { // The pixel has escaped!
+
+                    double result = p.iterate(IROUNDS);
+
+                    if (result > 0) {
+                        // Pixel escaped — colour it and expand neighbours.
                         pixelCount++;
-                        pixelMutex.acquire();
-                        context.localDisplay.setRGB(p.x, p.y, getEscapeColour(c));
-                        // Add the undiscovered neighbours to the search frontier.
-                        for(int i = 0; i < 4; i++) {
-                            int[] d = DIRS[(i + p.age / BUNCH) % 4];
-                            int nx = p.x + d[0];
-                            int ny = p.y + d[1];
-                            if(nx >= 0 && nx < sizeP && ny >= 0 && ny < sizeP) {
-                                if(!context.localFound[nx][ny]) {
-                                    context.localFound[nx][ny] = true;
-                                    context.localFrontier.offer(new Pixel(nx, ny));
-                                }
-                            }
-                        }
-                        pixelMutex.release();
-                    }
-                    else { // The pixel p did not yet escape, so put it back.
-                        context.localFrontier.offer(p);
+                        escapedCount++;
+                        int rgb = getEscapeColour(result);
+                        ctx.image.setRGB(p.x, p.y, rgb);
+                        currentMaxIter = Math.max(currentMaxIter, p.iter);
+                        expandNeighbours(ctx, p);
+                    } else if (-result >= MAX_ITER) {
+                        // Pixel hit max iterations — it's inside the set.
+                        // Colour it black (already default) and DON'T re-queue.
+                        insideCount++;
+                        currentMaxIter = Math.max(currentMaxIter, (int)(-result));
+                        expandNeighbours(ctx, p);
+                    } else {
+                        // Not yet decided — put back in queue for more iterations.
+                        ctx.frontier.offer(p);
                     }
                 }
-            } catch(Exception e) {
-                // Report the crash if it is some other than being interrupted.
-                if(!(e instanceof InterruptedException)) {
-                    // The index of this rendering task.
-                    int idx = 0;
-                    System.out.println("Task " + idx + " crashed: " + e);
-                    System.out.println("Printing the stack trace: ");
-                    StackTraceElement[] trace = e.getStackTrace();
-                    for (StackTraceElement stackTraceElement : trace) {
-                        System.out.print(stackTraceElement.getClassName() + " ");
-                        System.out.print(stackTraceElement.getMethodName() + " ");
-                        System.out.println(stackTraceElement.getLineNumber() + " ");
-                    }
-                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                System.err.println("Renderer crashed: " + e.getMessage());
+                e.printStackTrace();
             }
             return pixelCount;
         }
+
+        private void expandNeighbours(RenderingContext ctx, Pixel p) {
+            for (int i = 0; i < 4; i++) {
+                int[] d = DIRS[(i + p.age / BUNCH) % 4];
+                int nx = p.x + d[0];
+                int ny = p.y + d[1];
+                if (nx >= 0 && nx < sizeP && ny >= 0 && ny < sizeP) {
+                    // Atomic check-and-set via synchronized on the found array.
+                    synchronized (ctx.found) {
+                        if (!ctx.found[nx][ny]) {
+                            ctx.found[nx][ny] = true;
+                            ctx.frontier.offer(new Pixel(nx, ny,
+                                    size.doubleValue() > DOUBLE_PRECISION_LIMIT));
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    // A subclass to represent the task of rendering pixels from the given PriorityQueue.
+    // =======================================================================
+    // Rendering orchestration
+    // =======================================================================
 
-    // Compute the image using current settings.
     public void computeImage(Comparator<Pixel> frontierComp) {
         int sc = bigScale(size);
-        BigComplex.mc = new MathContext(sc + 4); 
-        size = new BigDecimal(size.toString(), BigComplex.mc); // convert to higher precision
-        top = new BigComplex( // convert to new math context
-            new BigDecimal(top.getRe().toString(), BigComplex.mc),
-            new BigDecimal(top.getIm().toString(), BigComplex.mc)
+        BigComplex.mc = new MathContext(sc + 6);
+        size = new BigDecimal(size.toString(), BigComplex.mc);
+        top = new BigComplex(
+                new BigDecimal(top.getRe().toString(), BigComplex.mc),
+                new BigDecimal(top.getIm().toString(), BigComplex.mc)
         );
 
-        // Keep track of which pixels have already been added to the frontier, so
-        // that we won't add them twice to the queue as their neighbours escape.
-        final boolean[][] localFound = new boolean[sizeP][sizeP];
-
-        // Create a new localDisplay that then becomes the display for this component.
+        boolean[][] localFound = new boolean[sizeP][sizeP];
         BufferedImage localDisplay = new BufferedImage(sizeP, sizeP, BufferedImage.TYPE_INT_RGB);
         this.display = localDisplay;
+        this.currentMaxIter = 0;
+        this.escapedCount = 0;
+        this.insideCount = 0;
 
-        // Tell the tasks for the previous frontier that they can now stop.
-        if(activeFrontier != null) {
+        // Poison the previous frontier to stop old workers.
+        if (activeFrontier != null) {
             activeFrontier.offer(POISON);
         }
 
-        // Create a new frontier of pixels currently being processed. 
-        PriorityBlockingQueue<Pixel> localFrontier = new PriorityBlockingQueue<>(100, frontierComp);
+        PriorityBlockingQueue<Pixel> localFrontier =
+                new PriorityBlockingQueue<>(256, frontierComp);
         activeFrontier = localFrontier;
+        psize = size.multiply(new BigDecimal(1.0 / sizeP, BigComplex.mc), BigComplex.mc);
 
-        // Complex coordinates of top left corner.
-        // Size of a single pixel in complex coordinates.
-        psize = size.multiply(new BigDecimal(1.0 / sizeP, BigComplex.mc));
+        boolean useDouble = size.doubleValue() > DOUBLE_PRECISION_LIMIT;
 
-        // Initialize the search frontiers for each edge.
-        for(int y = 0; y < sizeP; y += EDGE_SKIP) {
+        // Seed the edges of the image.
+        for (int y = 0; y < sizeP; y += EDGE_SKIP) {
             localFound[0][y] = true;
-            localFrontier.offer(new Pixel(0, y));
+            localFrontier.offer(new Pixel(0, y, useDouble));
             localFound[sizeP - 1][y] = true;
-            localFrontier.offer(new Pixel(sizeP - 1, y));
+            localFrontier.offer(new Pixel(sizeP - 1, y, useDouble));
+        }
+        for (int x = 0; x < sizeP; x += EDGE_SKIP) {
+            localFound[x][0] = true;
+            localFrontier.offer(new Pixel(x, 0, useDouble));
+            localFound[x][sizeP - 1] = true;
+            localFrontier.offer(new Pixel(x, sizeP - 1, useDouble));
         }
 
-        for(int x = 0; x < sizeP; x += EDGE_SKIP) {
-            localFound[x][0] = true;
-            localFrontier.offer(new Pixel(x, 0));
-            localFound[x][sizeP - 1] = true;
-            localFrontier.offer(new Pixel(x, sizeP - 1));
-        }      
-
-        RenderingContext context = new RenderingContext(localFrontier, localDisplay, localFound);
-        // Launch the renderer tasks.
-        for(int i = 0; i < THREADS; i++) {
-            es.submit(new Renderer(context));
+        RenderingContext ctx = new RenderingContext(localFrontier, localDisplay, localFound);
+        for (int i = 0; i < THREADS; i++) {
+            es.submit(new Renderer(ctx));
         }
     }
 
+    // =======================================================================
+    // Utility
+    // =======================================================================
+
     private static final BigDecimal TWO = new BigDecimal(2);
-    // Estimate the integer logarithm (base 2) of decimal number x.
+
     private static int bigScale(BigDecimal x) {
         int count = 1;
-        while(x.compareTo(BigDecimal.ONE) < 0) {
+        while (x.compareTo(BigDecimal.ONE) < 0) {
             count++;
             x = x.multiply(TWO);
         }
         return count;
     }
 
-    // The constructor with a good default starting value for complex coordinates.
-    public Mandelbrot(final int sizeP) {
+    // =======================================================================
+    // Constructors
+    // =======================================================================
+
+    public Mandelbrot(int sizeP) {
         this(sizeP, new BigComplex(-2.0, 1.2), new BigDecimal("2.5", BigComplex.mc));
     }
 
-    // The constructor to set up the component controls.
-    public Mandelbrot(final int sizeP, BigComplex top, BigDecimal size) {
+    public Mandelbrot(int sizeP, BigComplex top, BigDecimal size) {
         this.setPreferredSize(new Dimension(sizeP, sizeP));
         this.display = new BufferedImage(sizeP, sizeP, BufferedImage.TYPE_INT_RGB);
         this.top = top;
         this.sizeP = sizeP;
         this.size = size;
+        this.setFocusable(true);
 
-        // The search discipline in carving out the Mandelbrot turkey.
         PixelComparator pixelComp = new DFSComparator();
 
-        // When the mouse is dragged, use the new coordinates as (bx, by).
+        // --- Mouse drag for zoom selection ---
         this.addMouseMotionListener(new MouseMotionAdapter() {
-                public void mouseDragged(MouseEvent me) {
-                    bx = me.getX();
-                    by = me.getY();
-                    if(by < 0) { return; }
-                    // Flip the start and end of selection if necessary.
-                    if(bx < sx) { bx = sx; }
-                    if(by < sy) { by = sy; }
-                    // Enforce the selection being a square.
-                    if(bx - sx < by - sy) { bx = sx + (by - sy); }
-                    if(by - sy < bx - sx) { by = sy + (bx - sx); }
-                }
-            });
+            @Override
+            public void mouseDragged(MouseEvent me) {
+                bx = me.getX();
+                by = me.getY();
+                if (by < 0 || bx < 0) return;
+                if (bx < sx) bx = sx;
+                if (by < sy) by = sy;
+                // Enforce square selection.
+                int side = Math.max(bx - sx, by - sy);
+                bx = sx + side;
+                by = sy + side;
+            }
+        });
 
-        // Detect the start and end of drag using mouse button listener.
         this.addMouseListener(new MouseAdapter() {
-                public void mousePressed(MouseEvent me) {
-                    bx = sx = me.getX();
-                    by = sy = me.getY();
-                }
+            @Override
+            public void mousePressed(MouseEvent me) {
+                bx = sx = me.getX();
+                by = sy = me.getY();
+                requestFocusInWindow();
+            }
 
-                public void mouseReleased(MouseEvent me) {
-                    // Treat creating a small rectangle as giving up the zoom.
-                    if(sx < 0 || (bx - sx) < 4) { 
-                        sx = -1; return; 
-                    }
-                    // Calculate the area on complex plane determined by selection.
-                    BigDecimal psize = Mandelbrot.this.size.multiply(
-                            new BigDecimal(1.0 / Mandelbrot.this.sizeP, BigComplex.mc)
-                        );
-                    Mandelbrot.this.top = new BigComplex(
-                        Mandelbrot.this.top.getRe().add(psize.multiply(new BigDecimal(sx))),
-                        Mandelbrot.this.top.getIm().subtract(psize.multiply(new BigDecimal(sy)))
-                    );
-                    double sf = (bx - sx) / (double)Mandelbrot.this.sizeP;
-                    Mandelbrot.this.size = Mandelbrot.this.size.multiply(new BigDecimal(sf));
-                    sx = -1; // no more selection
-                    computeImage(pixelComp);
+            @Override
+            public void mouseReleased(MouseEvent me) {
+                if (sx < 0 || (bx - sx) < 4) {
+                    sx = -1;
+                    return;
                 }
-            });
+                // Save current view for undo.
+                zoomHistory.push(new BigDecimal[]{
+                        Mandelbrot.this.top.getRe(),
+                        Mandelbrot.this.top.getIm(),
+                        Mandelbrot.this.size
+                });
 
-        computeImage(pixelComp); // Launch rendering the initial image.
-        this.timer = new javax.swing.Timer(TIMER_FREQ, (ae) -> repaint());
-        this.timer.start(); // Launch the animation refresh timer.
+                BigDecimal ps = Mandelbrot.this.size.multiply(
+                        new BigDecimal(1.0 / Mandelbrot.this.sizeP, BigComplex.mc), BigComplex.mc);
+                Mandelbrot.this.top = new BigComplex(
+                        Mandelbrot.this.top.getRe().add(ps.multiply(new BigDecimal(sx), BigComplex.mc), BigComplex.mc),
+                        Mandelbrot.this.top.getIm().subtract(ps.multiply(new BigDecimal(sy), BigComplex.mc), BigComplex.mc)
+                );
+                double sf = (bx - sx) / (double) Mandelbrot.this.sizeP;
+                Mandelbrot.this.size = Mandelbrot.this.size.multiply(
+                        new BigDecimal(sf, BigComplex.mc), BigComplex.mc);
+                sx = -1;
+                computeImage(pixelComp);
+            }
+        });
+
+        // --- Keyboard controls ---
+        this.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_U: // Undo zoom
+                    case KeyEvent.VK_BACK_SPACE:
+                        if (!zoomHistory.isEmpty()) {
+                            BigDecimal[] prev = zoomHistory.pop();
+                            Mandelbrot.this.top = new BigComplex(prev[0], prev[1]);
+                            Mandelbrot.this.size = prev[2];
+                            computeImage(pixelComp);
+                        }
+                        break;
+                    case KeyEvent.VK_R: // Reset to default view
+                        zoomHistory.clear();
+                        Mandelbrot.this.top = new BigComplex(-2.0, 1.2);
+                        Mandelbrot.this.size = new BigDecimal("2.5", BigComplex.mc);
+                        computeImage(pixelComp);
+                        break;
+                    case KeyEvent.VK_I: // Toggle info overlay
+                        showInfo = !showInfo;
+                        break;
+                }
+            }
+        });
+
+        computeImage(pixelComp);
+        this.timer = new javax.swing.Timer(TIMER_FREQ, ae -> repaint());
+        this.timer.start();
     }
 
-    // To paint this component, just draw the image that we are rendering, 
-    // followed by the mouse drag rectangle, if it exists.
+    // =======================================================================
+    // Painting
+    // =======================================================================
+
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(this. display, 0, 0, this);
-        if(sx > -1) { // Render the zooming rectangle, if one has been created.
-            g.setColor(Color.WHITE);
-            g.drawRect(sx, sy, (bx - sx), (by - sy));
+        g.drawImage(display, 0, 0, this);
+
+        // Selection rectangle with crosshair.
+        if (sx > -1) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setColor(new Color(255, 255, 255, 180));
+            g2.drawRect(sx, sy, bx - sx, by - sy);
+            // Dim the area outside the selection.
+            g2.setColor(new Color(0, 0, 0, 80));
+            g2.fillRect(0, 0, sizeP, sy);
+            g2.fillRect(0, by, sizeP, sizeP - by);
+            g2.fillRect(0, sy, sx, by - sy);
+            g2.fillRect(bx, sy, sizeP - bx, by - sy);
+        }
+
+        // Info overlay.
+        if (showInfo) {
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            g2.setColor(new Color(0, 0, 0, 160));
+            g2.fillRoundRect(6, 6, 340, 82, 8, 8);
+            g2.setColor(new Color(200, 220, 255));
+            int y = 22;
+            g2.drawString(String.format("Zoom: %.3e  |  Threads: %d", size.doubleValue(), THREADS), 14, y);
+            y += 16;
+            g2.drawString(String.format("Centre: %.12f + %.12fi",
+                    top.getRe().doubleValue() + size.doubleValue() / 2,
+                    top.getIm().doubleValue() - size.doubleValue() / 2), 14, y);
+            y += 16;
+            g2.drawString(String.format("Max iter: %,d  |  Escaped: %,d  Inside: %,d",
+                    currentMaxIter, escapedCount, insideCount), 14, y);
+            y += 16;
+            g2.drawString("Keys: [U]ndo zoom  [R]eset  [I]nfo toggle", 14, y);
         }
     }
 
-    // Call this method to terminate the computing.
+    // =======================================================================
+    // Lifecycle
+    // =======================================================================
+
     public void terminate() {
-        timer.stop(); // Terminate the animation timer.
-        es.shutdownNow(); // Terminate the renderer tasks. 
+        timer.stop();
+        if (activeFrontier != null) activeFrontier.offer(POISON);
+        es.shutdownNow();
     }
 
-    // For demonstration purposes.
+    // =======================================================================
+    // Main
+    // =======================================================================
+
     public static void main(String[] args) {
-        final JFrame f = new JFrame("Mandelbrot Carver");
-        final Mandelbrot mandel = new Mandelbrot(1000);
+        JFrame f = new JFrame("Mandelbrot Explorer");
+        f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        Mandelbrot mandel = new Mandelbrot(1000);
         f.setLayout(new FlowLayout());
         f.add(mandel);
         f.addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent we) {
-                    mandel.terminate();
-                    f.dispose();
-                    es.shutdownNow();
-                }
-            });
+            @Override
+            public void windowClosing(WindowEvent we) {
+                mandel.terminate();
+                f.dispose();
+            }
+        });
         f.pack();
+        f.setLocationRelativeTo(null); // Centre on screen.
         f.setVisible(true);
+        mandel.requestFocusInWindow();
     }
 }

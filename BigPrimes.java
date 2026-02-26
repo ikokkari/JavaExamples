@@ -1,10 +1,13 @@
 import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -14,164 +17,278 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// Demonstrate the java.util.concurrent utility classes Semaphore, Future, BlockingQueue
-// and CountDownLatch for concurrency control, with demonstration worker task of finding
-// a large prime number.
-
+/**
+ * Demonstrate concurrency control mechanisms in java.util.concurrent using the
+ * worker task of finding large probable prime numbers. Six different approaches
+ * are shown, from low-level Semaphores to high-level CompletableFutures and
+ * virtual threads. Updated for Java 21+.
+ *
+ * @author Ilkka Kokkarinen
+ */
 public class BigPrimes {
 
-    // Interface for the continuation that each PrimeFinder task calls after completion.
+    // -----------------------------------------------------------------------
+    // THE WORKER TASK
+    // -----------------------------------------------------------------------
+
+    /** Callback that each PrimeFinder task invokes after finding its prime. */
+    @FunctionalInterface  // Marks this as usable with lambdas.
     private interface FinalCall {
         void finish(BigInteger prime) throws InterruptedException;
     }
 
-    /* A class representing the worker task of finding one random prime. */
+    /** A Callable task that finds one random probable prime of given bit length. */
     private static class PrimeFinder implements Callable<BigInteger> {
         private static final AtomicInteger TICKET_MACHINE = new AtomicInteger(0);
-        private final int id; // The numerical ID of this task.
-        private final int bits; // How many bits the prime number should contain.
-        private final FinalCall done; // Continuation to execute after finding the prime.
+        private final int id;
+        private final int bits;
+        private final FinalCall done;
+
         public PrimeFinder(int bits, FinalCall done) {
             this.id = TICKET_MACHINE.getAndIncrement();
             this.bits = bits;
             this.done = done;
         }
-        public PrimeFinder(int bits) {
-            this(bits, null);
-        }
+
+        public PrimeFinder(int bits) { this(bits, null); }
+
+        @Override
         public BigInteger call() throws InterruptedException {
             System.out.println("Starting PrimeFinder #" + id + ".");
-            // The method BigInteger.probablePrime does all the heavy lifting for us.
             BigInteger prime = BigInteger.probablePrime(bits, ThreadLocalRandom.current());
-            System.out.println("PrimeFinder #" + id + " found prime: " + primeString(prime));            
-            // The work is completed, so call the continuation given to this task.
-            if(done != null) {
-                done.finish(prime);
-            }
+            System.out.println("PrimeFinder #" + id + " found: " + primeString(prime));
+            if (done != null) { done.finish(prime); }
             return prime;
         }
     }
 
-    // The ExecutorService to manage the PrimeFinder tasks.
-    private static final ExecutorService es = Executors.newFixedThreadPool(5);
+    // -----------------------------------------------------------------------
+    // TEMPLATE: collect n primes using different concurrency strategies
+    // -----------------------------------------------------------------------
 
-    // Template method superclass for finding n random primes of given bit length.
     public abstract static class PrimeCollector {
+        /** Find n random primes of the given bit length. */
         public List<BigInteger> findPrimes(int n, int bits) throws InterruptedException {
-            // The list of prime numbers collected.
-            ArrayList<BigInteger> result = new ArrayList<>();
-            // Pass the buck to the template method to do the actual work.
+            var result = new ArrayList<BigInteger>();
             collectPrimes(n, bits, result);
-            // We are confident about this, putting our head on the chopping block.
             assert result.size() == n;
-            // The result should contain n random prime numbers.
             return result;
         }
-        // Subclasses override this template method to find the n primes in different ways.
-        protected abstract void collectPrimes(int n, int bits, List<BigInteger> result)
-        throws InterruptedException; 
-    }
 
-    // Find the primes using semaphores as control structure.
-    public static class PrimesUsingSemaphore extends PrimeCollector {
-        protected void collectPrimes(int n, int bits, List<BigInteger> result)
-        throws InterruptedException {
-            // The semaphore used for mutual exclusion to guard mutations of arraylist.
-            Semaphore mayModifyList = new Semaphore(1);
-            // The semaphore that this thread uses to wait for completion of n tasks.
-            Semaphore allDone = new Semaphore(-n + 1);    
-            for(int i = 0; i < n; i++) {
-                es.submit(new PrimeFinder(bits, prime -> { 
-                            try {
-                                mayModifyList.acquire();
-                                result.add(prime);
-                            }
-                            finally {
-                                mayModifyList.release();
-                                allDone.release();
-                            } })
-                );  
-            }
-            allDone.acquire(); // Block until all n started tasks have completed.
+        /** Subclasses override this to find primes using different control mechanisms. */
+        protected abstract void collectPrimes(int n, int bits, List<BigInteger> result)
+                throws InterruptedException;
+
+        @Override public String toString() {
+            // Strip the enclosing class prefix for cleaner output.
+            return getClass().getSimpleName();
         }
     }
+
+    // -----------------------------------------------------------------------
+    // APPROACH 1: SEMAPHORE
+    // -----------------------------------------------------------------------
+    // Two semaphores: one for mutual exclusion (guarding the shared list),
+    // one for waiting until all n tasks have completed.
+
+    public static class PrimesUsingSemaphore extends PrimeCollector {
+        @Override
+        protected void collectPrimes(int n, int bits, List<BigInteger> result)
+                throws InterruptedException {
+            var mayModifyList = new Semaphore(1);
+            // A semaphore initialized to -(n-1) will become available (reach 0)
+            // only after n release() calls — one from each completed task.
+            var allDone = new Semaphore(-n + 1);
+            try (var pool = Executors.newFixedThreadPool(5)) {
+                for (int i = 0; i < n; i++) {
+                    pool.submit(new PrimeFinder(bits, prime -> {
+                        try {
+                            mayModifyList.acquire();
+                            result.add(prime);
+                        } finally {
+                            mayModifyList.release();
+                            allDone.release();
+                        }
+                    }));
+                }
+                allDone.acquire(); // Block until all n tasks have completed.
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // APPROACH 2: FUTURE
+    // -----------------------------------------------------------------------
+    // Submit tasks, get Future tickets, then collect results. The simplest
+    // approach when you just need to fan-out work and gather results.
 
     public static class PrimesUsingFuture extends PrimeCollector {
+        @Override
         protected void collectPrimes(int n, int bits, List<BigInteger> result)
-        throws InterruptedException {
-            // The list of Future tickets for our submitted PrimeFinder tasks.
-            ArrayList<Future<BigInteger>> futures = new ArrayList<>();
-            // Submit the individual tasks and store the Future tickets into the list.
-            for(int i = 0; i < n; i++) {
-                futures.add(es.submit(new PrimeFinder(bits))); // (no continuation here)
-            }        
-            // Loop through the tickets one by one and collect the results.
-            for(Future<BigInteger> f: futures) {
-                try {
-                    result.add(f.get()); // Blocks until the task is complete.
-                } catch(ExecutionException ignored) { }
+                throws InterruptedException {
+            var futures = new ArrayList<Future<BigInteger>>();
+            try (var pool = Executors.newFixedThreadPool(5)) {
+                for (int i = 0; i < n; i++) {
+                    futures.add(pool.submit(new PrimeFinder(bits)));
+                }
+                for (Future<BigInteger> f : futures) {
+                    try {
+                        result.add(f.get()); // Blocks until this particular task completes.
+                    } catch (ExecutionException ignored) { }
+                }
             }
         }
     }
+
+    // -----------------------------------------------------------------------
+    // APPROACH 3: COUNTDOWN LATCH
+    // -----------------------------------------------------------------------
+    // A latch initialized to n; each worker counts it down by one. The main
+    // thread awaits until the count reaches zero.
 
     public static class PrimesUsingCountDownLatch extends PrimeCollector {
+        @Override
         protected void collectPrimes(int n, int bits, List<BigInteger> result)
-        throws InterruptedException {
-            // Let's decorate the given list to mutate it in a thread safe fashion.
-            List<BigInteger> sResult = Collections.synchronizedList(result);
-            // The CountdownLatch makes this thread wait until all workers are done.
-            CountDownLatch allDone = new CountDownLatch(n);
-            for(int i = 0; i < n; i++) {
-                es.submit(new PrimeFinder(bits, prime -> {
-                            sResult.add(prime);
-                            allDone.countDown(); // Decrement the countdown by one.
-                        }));
+                throws InterruptedException {
+            // Decorate the list for thread-safe mutation from worker threads.
+            List<BigInteger> safeResult = Collections.synchronizedList(result);
+            var allDone = new CountDownLatch(n);
+            try (var pool = Executors.newFixedThreadPool(5)) {
+                for (int i = 0; i < n; i++) {
+                    pool.submit(new PrimeFinder(bits, prime -> {
+                        safeResult.add(prime);
+                        allDone.countDown();
+                    }));
+                }
+                allDone.await();
             }
-            allDone.await(); // The Latch blocks until all n tasks have completed. 
         }
     }
+
+    // -----------------------------------------------------------------------
+    // APPROACH 4: BLOCKING QUEUE
+    // -----------------------------------------------------------------------
+    // Workers put() primes into a bounded queue; the main thread take()s them
+    // out. Both operations block when the queue is full or empty, respectively.
 
     public static class PrimesUsingBlockingQueue extends PrimeCollector {
+        @Override
         protected void collectPrimes(int n, int bits, List<BigInteger> result)
-        throws InterruptedException {
-            // The blocking queue in which the workers add the prime numbers they find. 
+                throws InterruptedException {
             BlockingQueue<BigInteger> primes = new ArrayBlockingQueue<>(n);
-            // For BlockingQueue, put and take methods are thread-safe.
-            for(int i = 0; i < n; i++) {
-                es.submit(new PrimeFinder(bits, primes::put));
-            }
-            // The blocking queue will block until next prime becomes available.
-            for(int i = 0; i < n; i++) {
-                result.add(primes.take());
+            try (var pool = Executors.newFixedThreadPool(5)) {
+                for (int i = 0; i < n; i++) {
+                    pool.submit(new PrimeFinder(bits, primes::put));
+                }
+                for (int i = 0; i < n; i++) {
+                    result.add(primes.take()); // Blocks until next prime is available.
+                }
             }
         }
     }
 
-    // Since our primes will get rather long, prettify their printing.
+    // -----------------------------------------------------------------------
+    // APPROACH 5: COMPLETABLE FUTURE (Java 8+)
+    // -----------------------------------------------------------------------
+    // CompletableFuture is the "promise" of Java: a composable, chainable
+    // representation of an async computation. Unlike plain Future, you can
+    // attach callbacks (thenApply, thenAccept) and combine multiple futures
+    // (allOf, anyOf) without blocking.
+
+    public static class PrimesUsingCompletableFuture extends PrimeCollector {
+        @Override
+        protected void collectPrimes(int n, int bits, List<BigInteger> result)
+                throws InterruptedException {
+            List<BigInteger> safeResult = Collections.synchronizedList(result);
+            // supplyAsync runs each task on the common ForkJoinPool.
+            // We could pass a custom executor as second argument.
+            var futures = new CompletableFuture<?>[n];
+            for (int i = 0; i < n; i++) {
+                final int taskId = i;
+                futures[i] = CompletableFuture
+                        .supplyAsync(() -> {
+                            System.out.println("Starting CF PrimeFinder #" + taskId + ".");
+                            var prime = BigInteger.probablePrime(bits, ThreadLocalRandom.current());
+                            System.out.println("CF PrimeFinder #" + taskId + " found: "
+                                    + primeString(prime));
+                            return prime;
+                        })
+                        .thenAccept(safeResult::add);  // Chain: when done, add to result.
+            }
+            // CompletableFuture.allOf: returns a future that completes when ALL
+            // of the given futures complete. join() blocks until that happens.
+            CompletableFuture.allOf(futures).join();
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // APPROACH 6: VIRTUAL THREADS (Java 21)
+    // -----------------------------------------------------------------------
+    // With virtual threads, there's no need for a fixed pool size. The executor
+    // creates one virtual thread per task — cheap enough to scale to millions.
+    // The code is structurally identical to the Future approach, but with a
+    // fundamentally different threading model underneath.
+
+    public static class PrimesUsingVirtualThreads extends PrimeCollector {
+        @Override
+        protected void collectPrimes(int n, int bits, List<BigInteger> result)
+                throws InterruptedException {
+            var futures = new ArrayList<Future<BigInteger>>();
+            // newVirtualThreadPerTaskExecutor: one virtual thread per submit().
+            // No pool size to tune — virtual threads are JVM-managed and cheap.
+            try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (int i = 0; i < n; i++) {
+                    futures.add(pool.submit(new PrimeFinder(bits)));
+                }
+                for (Future<BigInteger> f : futures) {
+                    try {
+                        result.add(f.get());
+                    } catch (ExecutionException ignored) { }
+                }
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // UTILITY
+    // -----------------------------------------------------------------------
+
+    /** Truncate long prime numbers for readable output. */
     private static String primeString(BigInteger prime) {
         String s = prime.toString();
-        if(s.length() < 50) { return s; }
-        else {
-            return s.substring(0, 20) + "[..." + (s.length() - 40) + " digits...]" 
-            + s.substring(s.length() - 20);
-        }
-    }    
-    
-    public static void main(String[] args) throws InterruptedException {
-        PrimeCollector collector = new PrimesUsingBlockingQueue();
-        long startTime = System.currentTimeMillis();
-        List<BigInteger> primes = collector.findPrimes(10, 1000);
-        long endTime = System.currentTimeMillis();
-        System.out.print("Found the primes in " + (endTime - startTime) + " ms. ");
-        System.out.println("The primes found are: ");
-        for(BigInteger p: primes) {
-            System.out.println(primeString(p));
-        }
-        shutdown();
+        if (s.length() < 50) return s;
+        return s.substring(0, 20) + "[..." + (s.length() - 40) + " digits...]"
+                + s.substring(s.length() - 20);
     }
 
-    // Shut down the executor service of this class.
-    public static void shutdown() {
-        es.shutdownNow();
+    // -----------------------------------------------------------------------
+    // MAIN: run all six approaches back to back
+    // -----------------------------------------------------------------------
+
+    public static void main(String[] args) throws InterruptedException {
+        int count = 10;
+        int bits = 1000;
+
+        PrimeCollector[] collectors = {
+                new PrimesUsingSemaphore(),
+                new PrimesUsingFuture(),
+                new PrimesUsingCountDownLatch(),
+                new PrimesUsingBlockingQueue(),
+                new PrimesUsingCompletableFuture(),
+                new PrimesUsingVirtualThreads()
+        };
+
+        for (PrimeCollector collector : collectors) {
+            System.out.println("\n" + "=".repeat(60));
+            System.out.println("Strategy: " + collector);
+            System.out.println("=".repeat(60));
+
+            var start = Instant.now();
+            List<BigInteger> primes = collector.findPrimes(count, bits);
+            var elapsed = Duration.between(start, Instant.now());
+
+            System.out.println("Found " + primes.size() + " primes in "
+                    + elapsed.toMillis() + " ms.");
+        }
     }
 }

@@ -1,97 +1,149 @@
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+/**
+ * Read a text file and compute word frequencies. Demonstrates modern Java I/O
+ * with NIO Files.lines(), stream-based text processing, Map operations, and
+ * Comparator composition. Updated for Java 21+.
+ *
+ * The previous version of this file contained an elaborate contraction-expansion
+ * system ("doesn't" → "does not", "won't" → "will not", etc.) under the
+ * delusion that computational linguistics somehow needs to remove contractions.
+ * It has been taken out back and dealt with. The new version simply strips
+ * apostrophes so that "don't" becomes "dont" — honest about its crudeness
+ * rather than pretending to be NLP. For real tokenization, use a real library.
+ *
+ * @author Ilkka Kokkarinen
+ */
 public class WordFrequency {
-    
-    // To run this program, change the FILENAME to some text file that you have.
-    private static final String FILENAME = "warandpeace.txt";
 
-    private static final String[][] replacements = {
-            {"doesn't", "does not"},
-            {"don't", "do not"},
-            {"you're", "you are"},
-            {"i'm", "i am"},
-            {"we're", "we are"},
-            {"they're", "they are"},
-            {"won't", "will not"},
-            {"can't", "can not"},
-            {"shan't", "shall not"},
-            {"shouldn't", "should not"},
-            {"mustn't", "must not"},
-            {"aren't", "are not"}
-    };
+    // To run this program, pass the filename as a command-line argument,
+    // or change this default to some text file that you have.
+    private static final String DEFAULT_FILE = "warandpeace.txt";
 
-    public static Map<String, Integer> wordFrequencies(Scanner s) {
-        Map<String, Integer> frequencies = new HashMap<>();
-        while(s.hasNextLine()) {
-            String line = s.nextLine().trim().toLowerCase();
-            for(String[] replacement: replacements) {
-                line = line.replaceAll(replacement[0], replacement[1]);
-            }
-            line = line.replaceAll("'s\\b", ""); // \b is regex word boundary
-            line = line.replaceAll("'ll\\b", " will");
-            line = line.replaceAll("'t\\b", "");
-            String wordSeparators = "[^a-z]+";
-            for(String word: line.split(wordSeparators)) {
-                // Lines that start with the quote character will end up having an
-                // empty word at the front of the split line array. Thus, this check.
-                if(word.length() != 0) {
-                    frequencies.put(word, frequencies.getOrDefault(word, 0) + 1);
-                }
-            }
+    // Precompiled regex pattern: anything that is not a lowercase letter.
+    // Compiling once and reusing is faster than calling String.split() with
+    // a regex string on every line (which recompiles the pattern each time).
+    private static final Pattern NON_LETTER = Pattern.compile("[^a-z]+");
+
+    /**
+     * A record to pair a word with its count. Records (Java 16+) automatically
+     * generate equals, hashCode, toString, and accessor methods.
+     */
+    public record WordCount(String word, int count) {}
+
+    /**
+     * Read all lines from the given path and return a map of word frequencies.
+     * @param path The file to read.
+     * @return A map from each word to the number of times it appears.
+     * @throws IOException if the file cannot be read.
+     */
+    public static Map<String, Integer> wordFrequencies(Path path) throws IOException {
+        // Files.lines() returns a lazy Stream<String> — it reads lines on demand
+        // rather than loading the entire file into memory. The try-with-resources
+        // ensures the underlying file handle is closed when the stream is done.
+        Map<String, Integer> frequencies = new TreeMap<>();
+
+        try (Stream<String> lines = Files.lines(path)) {
+            lines
+                    .map(String::toLowerCase)      // normalize case
+                    .map(line -> line.replace("'", "")) // strip apostrophes (crude but honest)
+                    .flatMap(NON_LETTER::splitAsStream)  // split into words, as a stream
+                    .filter(word -> !word.isEmpty())      // discard empty fragments
+                    .forEach(word ->
+                            // Map.merge (Java 8+): if key absent, insert value; if present,
+                            // apply the remapping function. Replaces the getOrDefault/put dance.
+                            frequencies.merge(word, 1, Integer::sum)
+                    );
         }
         return frequencies;
     }
-    
+
+    /**
+     * Sort words by descending frequency, breaking ties alphabetically.
+     * Built entirely from Comparator factory methods — no custom class needed.
+     */
+    public static List<WordCount> sortedByFrequency(Map<String, Integer> frequencies) {
+        // Comparator.comparingInt extracts the sort key; reversed() flips to descending;
+        // thenComparing adds a secondary sort on the word itself (ascending/alphabetical).
+        return frequencies.entrySet().stream()
+                .sorted(
+                        Map.Entry.<String, Integer>comparingByValue().reversed()
+                                .thenComparing(Map.Entry.comparingByKey())
+                )
+                .map(e -> new WordCount(e.getKey(), e.getValue()))
+                .toList(); // Java 16+ unmodifiable list, replaces .collect(Collectors.toList())
+    }
+
+    /**
+     * Print words wrapped to a maximum line width. Replaces the old LinePrinter
+     * dependency with a simple, self-contained approach.
+     */
+    public static void printWrapped(List<String> items, int maxWidth) {
+        int col = 0;
+        for (String item : items) {
+            if (col > 0 && col + 1 + item.length() > maxWidth) {
+                System.out.println();
+                col = 0;
+            }
+            if (col > 0) {
+                System.out.print(" ");
+                col++;
+            }
+            System.out.print(item);
+            col += item.length();
+        }
+        System.out.println();
+    }
+
     // For demonstration purposes, some word frequencies from "War and Peace".
     public static void main(String[] args) throws IOException {
-        Map<String, Integer> frequencies = wordFrequencies(new Scanner(new File(FILENAME)));
-        System.out.println("Found " + frequencies.size() + " distinct words.\n");
-        System.out.println("Some occurrence counts are: ");
-        String[] words = {
-            "chicken", "prince", "Russia", "train", "I", "supercalifragilisticexpialidocius"
-        };
-        for(String word: words) {
-            word = word.toLowerCase();
-            System.out.println(word + ": " + (frequencies.getOrDefault(word, 0)));
-        }
-        
-        // Custom comparator to compare strings by their frequency in the map, resolving cases
-        // for equal frequency using the ordinary string comparison as secondary criterion.
-        class FreqComparator implements Comparator<String> {
-            public int compare(String word1, String word2) {
-                int f1 = frequencies.get(word1);
-                int f2 = frequencies.get(word2);
-                return f2 != f1 ? (f1 < f2 ? +1 : -1) : word2.compareTo(word1);
-            }
-        }
-        
-        // Create an arraylist of words so that we can sort these words by frequency.
-        ArrayList<String> wordList = new ArrayList<>(frequencies.keySet());
-        // Sort the arraylist using our frequency comparator.
-        wordList.sort(new FreqComparator());
+        // Accept filename from command line, or fall back to the default.
+        String filename = args.length > 0 ? args[0] : DEFAULT_FILE;
+        Path path = Path.of(filename);
 
-        // Let's print out the results.
-        System.out.println("\nThe three hundred most frequent words of 'War and Peace' are:\n");
-        LinePrinter lp = new LinePrinter(new PrintWriter(System.out), 80);
-        for(int i = 0; i < 300; i++) {
-            String word = wordList.get(i);
-            lp.printWord(word + " (" + frequencies.get(word) + ")");
+        if (!Files.exists(path)) {
+            System.err.println("File not found: " + path);
+            System.exit(1);
         }
-        lp.lineBreak();
-        System.out.println("\nHere are the words that occur only once in 'War and Peace':\n");
-        int i = wordList.size()-1;
-        String word = wordList.get(i--);
-        while(frequencies.get(word) == 1) {
-            lp.printWord(word);
-            word = wordList.get(i--);
+
+        Map<String, Integer> frequencies = wordFrequencies(path);
+        System.out.println("Found " + frequencies.size() + " distinct words.\n");
+
+        // Look up some specific words.
+        System.out.println("Some occurrence counts:");
+        for (String word : List.of("chicken", "prince", "russia", "train", "i",
+                "supercalifragilisticexpialidocius")) {
+            System.out.println("  " + word + ": " + frequencies.getOrDefault(word, 0));
         }
-        lp.lineBreak();
+
+        // Sort all words by frequency.
+        List<WordCount> sorted = sortedByFrequency(frequencies);
+
+        // Print the 300 most frequent words, wrapped to 80 columns.
+        int topN = Math.min(300, sorted.size());
+        System.out.println("\nThe " + topN + " most frequent words:\n");
+        List<String> topFormatted = sorted.stream()
+                .limit(topN)
+                .map(wc -> wc.word() + " (" + wc.count() + ")")
+                .toList();
+        printWrapped(topFormatted, 80);
+
+        // Print all words that occur exactly once (hapax legomena).
+        List<String> hapaxes = sorted.stream()
+                .filter(wc -> wc.count() == 1)
+                .map(WordCount::word)
+                .toList();
+        System.out.println("\n" + hapaxes.size() + " words occur only once (hapax legomena):\n");
+        printWrapped(hapaxes, 80);
     }
 }

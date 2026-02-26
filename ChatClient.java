@@ -344,17 +344,7 @@ public class ChatClient extends JFrame implements AutoCloseable {
         return launch(InetAddress.getLoopbackAddress(), serverPort, nickname);
     }
 
-    /**
-     * Main method for standalone execution.
-     */
     public static void main(String[] args) {
-        // Set look and feel to system default
-        try {
-            UIManager.setSystemLookAndFeel();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Could not set system look and feel", e);
-        }
-
         if (args.length != 2) {
             System.err.println("USAGE: java ChatClient <port> <nickname>");
             System.exit(1);

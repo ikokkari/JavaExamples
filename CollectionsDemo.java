@@ -6,236 +6,332 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.random.RandomGenerator;
+import java.util.stream.Stream;
 
+/**
+ * Demonstrate Java Collections Framework: sets, lists, iterators, comparators,
+ * and the polymorphic algorithms that tie them together. Updated for Java 21+.
+ * @author Ilkka Kokkarinen
+ */
 public class CollectionsDemo {
-    
-    private static final Random rng = new Random(4242);
-    
+
+    private static final RandomGenerator rng = RandomGenerator.of("L64X128MixRandom");
+
     @SuppressWarnings("unchecked")
     public static void basicOperations() {
         System.out.println("Basic operations demo begins.");
-        TreeSet<Integer> treeSetOne = new TreeSet<>();
-        
-        // First, the dynamic set operations add, remove and contains.
+
+        // TreeSet keeps its elements in sorted order (red-black tree internally).
+        var treeSetOne = new TreeSet<Integer>();
+
+        // The three fundamental dynamic set operations: add, remove, contains.
         treeSetOne.add(42);
         treeSetOne.add(99);
         treeSetOne.add(17); // Despite added last, will be iterated over first.
-        treeSetOne.add(99); // Adding same element second time does nothing.
-        System.out.println("Our example treeset: " + treeSetOne); // decent toString()
-        
+        treeSetOne.add(99); // Adding a duplicate does nothing — sets have no repeats.
+        System.out.println("Our example treeset: " + treeSetOne); // sensible toString()
+
         // Dumb way to do the following. Used here only for demonstration purposes.
         System.out.println("Looking for elements in the treeset.");
-        for(int i = 0; i < 100; i++) {
-            if(treeSetOne.contains(i)) { System.out.println("Element " + i + " was found"); }
+        for (int i = 0; i < 100; i++) {
+            if (treeSetOne.contains(i)) {
+                System.out.println("Element " + i + " was found");
+            }
         }
+
         treeSetOne.remove(42);
         treeSetOne.remove(42); // Not an error, just does nothing.
         treeSetOne.remove(17);
         System.out.println("Looking for elements in the treeset again.");
-        for(int i = 0; i < 100; i++) {
-            if(treeSetOne.contains(i)) { System.out.println("Element " + i + " was found"); }
+        for (int i = 0; i < 100; i++) {
+            if (treeSetOne.contains(i)) {
+                System.out.println("Element " + i + " was found");
+            }
         }
-        
-        // Two collections are equal if they are of same general type with equal elements.
-        TreeSet<Integer> treeSetTwo = new TreeSet<>();
+
+        // Two collections are equal if they are the same general type with equal
+        // elements. The contract: Set.equals(Set) compares as sets, List.equals(List)
+        // compares as lists, but Set.equals(List) is always false.
+        var treeSetTwo = new TreeSet<Integer>();
         treeSetTwo.add(99);
-        HashSet<Integer> hashSet = new HashSet<>();
+        var hashSet = new HashSet<Integer>();
         hashSet.add(99);
-        ArrayList<Integer> arrayList = new ArrayList<>();
+        var arrayList = new ArrayList<Integer>();
         arrayList.add(99);
-        System.out.println("treeSetOne equals treeSetTwo: " + treeSetOne.equals(treeSetTwo)); // true
-        System.out.println("treeSetOne equals hashSet: " + treeSetOne.equals(hashSet)); // true, hashSet is a Set
-        System.out.println("treeSetOne equals arrayList: " + treeSetOne.equals(arrayList)); // false, arrayList is a List
-        System.out.println("treeSetOne equals \"Hello\": " + treeSetOne.equals("Hello")); // false, for sure
-        
-        // Collections contain references, not actual objects.
-        ArrayList<Object> ao = new ArrayList<Object>();
+        System.out.println("treeSetOne equals treeSetTwo: " + treeSetOne.equals(treeSetTwo));
+        System.out.println("treeSetOne equals hashSet: " + treeSetOne.equals(hashSet));
+        System.out.println("treeSetOne equals arrayList: " + treeSetOne.equals(arrayList));
+        System.out.println("treeSetOne equals \"Hello\": " + treeSetOne.equals("Hello"));
+
+        // --- Unmodifiable factory methods (Java 9+) ---
+        // Set.of and List.of create compact, immutable collections. Use them when
+        // you know the elements up front and don't need mutation.
+        Set<Integer> immutableSet = Set.of(10, 20, 30);
+        List<String> immutableList = List.of("alpha", "bravo", "charlie");
+        System.out.println("Immutable set: " + immutableSet);
+        System.out.println("Immutable list: " + immutableList);
+        // immutableSet.add(40);  // Would throw UnsupportedOperationException!
+
+        // Set.copyOf freezes a mutable set into an unmodifiable snapshot.
+        Set<Integer> frozen = Set.copyOf(treeSetOne);
+        treeSetOne.add(1000);
+        System.out.println("Original mutated: " + treeSetOne);
+        System.out.println("Frozen snapshot untouched: " + frozen);
+
+        // Collections contain references, not actual objects. This means you can
+        // create circular structures — they won't become infinite matryoshka dolls.
+        var ao = new ArrayList<Object>();
         ao.add(42);
         ao.add("Hello world");
-        ao.add(ao); // This does not become an infinitely deeply nested matryoshka doll.
-        System.out.println(ao + " has size of " +  ao.size()); // implicit toString()
-        ((Collection<Object>)(ao.get(2))).add(ao); // even more strange, yet still legal
-        System.out.println(ao + " has size of " +  ao.size()); // implicit toString()
-        System.out.println("Basic operations demo ends.\n\n");
+        ao.add(ao); // ao now contains itself!
+        System.out.println(ao + " has size of " + ao.size());
+        ((Collection<Object>) (ao.get(2))).add(ao); // even stranger, yet legal
+        System.out.println(ao + " has size of " + ao.size());
+
+        System.out.println("Basic operations demo ends.\n");
     }
-    
-    // The Collections utility class contains many useful polymorphic algorithms.
+
+    /**
+     * The Collections utility class contains many useful polymorphic algorithms.
+     * We also show their modern stream-based equivalents side by side.
+     */
     public static void algorithmsDemo() {
         System.out.println("Algorithms demo begins.");
-        ArrayList<Integer> ai = new ArrayList<>();
-        for(int i = 0; i < 10; i++) {
+
+        var ai = new ArrayList<Integer>();
+        for (int i = 0; i < 10; i++) {
             ai.add(rng.nextInt(1000));
         }
         System.out.println("Initial arraylist:");
         System.out.println(ai);
+
         System.out.println("The largest element is " + Collections.max(ai) + ".");
-        System.out.println("Rotating elements 3 steps to right produces this:");
-        Collections.rotate(ai, 3); // negative offset would rotate left
+        // Stream equivalent — same result, different idiom.
+        ai.stream().max(Comparator.naturalOrder())
+                .ifPresent(m -> System.out.println("Stream max agrees: " + m));
+
+        // Rotate elements: positive offset rotates right, negative rotates left.
+        System.out.println("Rotating 3 steps right:");
+        Collections.rotate(ai, 3);
         System.out.println(ai);
-        
-        System.out.println("Sorted arraylist:");
+
+        System.out.println("Sorted:");
         Collections.sort(ai);
         System.out.println(ai);
-        
-        System.out.println("Shuffled arraylist:");
+
+        // Java 21 SequencedCollection: getFirst(), getLast(), reversed().
+        // These replace the old get(0) and get(list.size()-1) gymnastics.
+        System.out.println("First (smallest): " + ai.getFirst());
+        System.out.println("Last (largest):   " + ai.getLast());
+        System.out.println("Reversed view:    " + ai.reversed());
+
+        System.out.println("Shuffled:");
         Collections.shuffle(ai);
         System.out.println(ai);
-        
-        System.out.println("Filled arraylist:");
+
+        System.out.println("Filled with 99:");
         Collections.fill(ai, 99);
         System.out.println(ai);
-        System.out.println("Value 99 occurs in the list " + Collections.frequency(ai, 99) + " times.");
-        System.out.println("Algorithms demo ends.\n\n");
+        System.out.println("Value 99 occurs " + Collections.frequency(ai, 99) + " times.");
+
+        System.out.println("Algorithms demo ends.\n");
     }
-    
-    // Polymorphic methods can be written to work on any collection of any type. The
-    // next method works for any subtype of Iterator<Integer> that will ever exist,
-    // instead of us having to write a new version of this method for each new subtype.
+
+    // -----------------------------------------------------------------------
+    // POLYMORPHIC ITERATOR METHODS
+    // -----------------------------------------------------------------------
+    // The next method works for any subtype of Iterator<Integer> that will ever
+    // exist, instead of us having to write a new version for each new subtype.
     // Always remember the DRY Principle: Don't Repeat Yourself!
-    
+
     public static int sum(Iterator<Integer> iterator) {
         int total = 0;
-        while(iterator.hasNext()) {
-            int e = iterator.next(); // return current element and step forward
-            total += e;
+        while (iterator.hasNext()) {
+            total += iterator.next(); // return current element and advance
         }
         return total;
     }
 
-    // Summing through any collection is now trivial.
+    // Summing through any collection is now trivially delegated.
     public static int sum(Collection<Integer> c) {
         return sum(c.iterator());
-    }    
-    
-    // There is no law dictating that the iterator has to be "backed up" by some actual
-    // collection. You can iterate through a virtual sequence of data, even infinite.
-    // The algorithms that use these iterators don't know the difference nor do they
-    // even have to care, which is the whole point of polymorphism.
-    
+    }
+
+    // -----------------------------------------------------------------------
+    // VIRTUAL ITERATORS
+    // -----------------------------------------------------------------------
+    // There is no law that an iterator must be "backed up" by some actual collection.
+    // You can iterate through a virtual, computed, even infinite sequence. The
+    // algorithms that consume these iterators don't know the difference — and don't
+    // have to care. That is the whole point of polymorphism.
+
     public static class FibonacciIterator implements Iterator<BigInteger> {
         private BigInteger a = BigInteger.ZERO;
         private BigInteger b = BigInteger.ONE;
-        public boolean hasNext() { return true; } // they never end
+
+        @Override
+        public boolean hasNext() { return true; } // Fibonacci numbers never end.
+
+        @Override
         public BigInteger next() {
             BigInteger c = a.add(b);
-            a = b; // shift sliding window one step left
+            a = b; // slide the window one step forward
             b = c;
             return a;
         }
     }
-   
-    // Since the Iterator<E> interface is so simple, it is also simple to decorate:
-    
+
+    // Since Iterator<E> is such a simple interface, it is also simple to decorate.
+    // This decorator repeats each value from the underlying iterator a fixed number
+    // of times before advancing to the next one.
+
     public static class DuplicatingIterator<E> implements Iterator<E> {
-        private final int dup; // how many times each value should be duplicated
-        private int count; // how many times current value has been duplicated
-        private E value = null; // the current value that is being duplicated
+        private final int dup;   // how many times each value is repeated
+        private int count;       // how many times the current value has been emitted
+        private E value = null;  // the current value being repeated
         private final Iterator<E> client;
+
         public DuplicatingIterator(Iterator<E> client, int dup) {
             this.client = client;
             this.dup = this.count = dup;
         }
-        
-        // The two methods of Iterator interface that we must implement.
+
+        @Override
         public E next() {
-            if(count < dup) { 
-                count++; return value; // return cached value
-            } 
-            else {
-                value = client.next(); // consult client for the next value
+            if (count < dup) {
+                count++;
+                return value; // return the cached value
+            } else {
+                value = client.next(); // advance the underlying iterator
                 count = 1;
                 return value;
             }
         }
-        
+
+        @Override
         public boolean hasNext() {
-            // If the current element has been given out enough times, this iterator
-            // has a next value if and only if its client has a next value.
-            if(count == dup) { return client.hasNext(); }
-            // When in the middle of duplication, there is always a next value.
-            return true;            
-        }
-    }
-    
-    public static void fibonacciDemo() {
-        System.out.println("\n\nFibonacci demo begins.");
-        System.out.println("Printing first 50 Fibonacci numbers duplicated.");
-        Iterator<BigInteger> it = new DuplicatingIterator<>(new FibonacciIterator(), 3);
-        for(int i = 0; i < 50; i++) {
-            System.out.println(it.next());
-        }
-        System.out.println("Fibonacci demo ends.\n\n");
-    }
-    
-    // The utility interface Comparator<T> can be used to define Strategy objects
-    // that control the way sorting, maximum and other order-based operations work.
-    // Here is a wacky custom comparator for integers so that every odd integer is
-    // smaller than any even integer.
-    
-    private static class OddEvenComparator implements Comparator<Integer> {
-        // return neg if a < b, pos if a > b, and zero if a = b 
-        public int compare(Integer a, Integer b) {
-            // One is odd, the other is even
-            if(a % 2 != 0 && b % 2 == 0) { return -1; }
-            if(a % 2 == 0 && b % 2 != 0) { return +1; }
-            // Otherwise compare normally.
-            return a.compareTo(b);
+            // In the middle of a duplication run, there's always a next value.
+            // Otherwise, delegate to the underlying iterator.
+            return count < dup || client.hasNext();
         }
     }
 
-    // Another custom comparator that compares numbers in lexicographical order.
-    
-    private static class LexicographicComparator implements Comparator<Integer> {
+    public static void fibonacciDemo() {
+        System.out.println("Fibonacci demo begins.");
+        System.out.println("First 50 Fibonacci numbers, each tripled:");
+        Iterator<BigInteger> it = new DuplicatingIterator<>(new FibonacciIterator(), 3);
+        for (int i = 0; i < 50; i++) {
+            System.out.println(it.next());
+        }
+
+        // Modern alternative: Stream.iterate (Java 9+) can express the same
+        // Fibonacci sequence without writing a class at all. The seed is a
+        // two-element array used as a sliding window.
+        System.out.println("\nFirst 10 Fibonacci numbers via Stream.iterate:");
+        Stream.iterate(
+                        new BigInteger[]{BigInteger.ZERO, BigInteger.ONE},
+                        pair -> new BigInteger[]{pair[1], pair[0].add(pair[1])}
+                )
+                .limit(10)
+                .map(pair -> pair[1]) // extract the "current" value
+                .forEach(System.out::println);
+
+        System.out.println("Fibonacci demo ends.\n");
+    }
+
+    // -----------------------------------------------------------------------
+    // COMPARATORS: Strategy objects that control sorting and ordering.
+    // -----------------------------------------------------------------------
+
+    // A wacky comparator where every odd integer is smaller than any even integer.
+    // Written as a full class to show the classic pre-lambda approach.
+
+    private static class OddEvenComparator implements Comparator<Integer> {
+        // Return negative if a < b, positive if a > b, zero if equal.
+        @Override
         public int compare(Integer a, Integer b) {
-            return ("" + a).compareTo("" + b); // String has internal compareTo method
+            boolean aOdd = a % 2 != 0, bOdd = b % 2 != 0;
+            if (aOdd && !bOdd) return -1; // odd < even
+            if (!aOdd && bOdd) return +1; // even > odd
+            return a.compareTo(b);        // same parity: natural order
         }
     }
-    
-    // A Comparator decorator that can be placed in front of any existing Comparator.
-    // Counting comparator might be handy in measuring various sorting algorithms.
-    
+
+    // A Comparator decorator that counts how many comparisons are performed.
+    // Handy for measuring sorting algorithms in class.
+
     private static class CountingComparator<T> implements Comparator<T> {
         private final Comparator<T> client;
         private int count = 0;
+
         public CountingComparator(Comparator<T> client) {
             this.client = client;
         }
+
+        @Override
         public int compare(T a, T b) {
             count++;
             return client.compare(a, b);
         }
-        // Decorators may also define brand new methods and functionality. After all,
-        // a polymorphic method that receives a Comparator<T> should not care what
-        // other functionality these objects have in addition to those required by
-        // the Comparator<T> interface.
+
+        // Decorators may define brand-new methods. A polymorphic method that
+        // receives a Comparator<T> doesn't care what other functionality these
+        // objects have beyond the Comparator interface.
         public int getCount() { return count; }
     }
-    
+
     public static void demonstrateComparators() {
         System.out.println("Comparators demo begins.");
-        List<Integer> ai = new ArrayList<>();
-        for(int i = 0; i < 10; i++) { ai.add(rng.nextInt(1000)); }
+
+        var ai = new ArrayList<Integer>();
+        for (int i = 0; i < 10; i++) { ai.add(rng.nextInt(1000)); }
         System.out.println("Initial arraylist:");
         System.out.println(ai);
-        System.out.println("Sorted normally:");
+
+        // --- Classic approach: Collections.sort ---
         Collections.sort(ai);
-        System.out.println(ai);
-        System.out.println("Largest element is " + Collections.max(ai) + ".");
-        
-        System.out.println("Sorted with a counting OddEvenComparator:");
-        CountingComparator<Integer> comp = new CountingComparator<>(new OddEvenComparator());
-        Collections.sort(ai, comp);
-        System.out.println(ai);
-        System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
-        
-        System.out.println("Sorted with a counting lexicographic Comparator:");
-        comp = new CountingComparator<>(new LexicographicComparator());
-        Collections.sort(ai, comp);
-        System.out.println(ai);
-        System.out.println("Sorting needed " + comp.getCount() + " element comparisons.");
-        System.out.println("Comparators demo ends.");
+        System.out.println("Sorted naturally: " + ai);
+        System.out.println("Largest element: " + Collections.max(ai));
+
+        // --- Modern approach: List.sort (Java 8+) is preferred over Collections.sort ---
+        // It sorts the list in place, same as before, but called on the list itself.
+        var comp = new CountingComparator<>(new OddEvenComparator());
+        ai.sort(comp);
+        System.out.println("Sorted with counting OddEvenComparator: " + ai);
+        System.out.println("Comparisons needed: " + comp.getCount());
+
+        // --- Lambda comparators (Java 8+) ---
+        // For simple comparators, you don't need a whole class. A lambda suffices.
+        // This is the lexicographic comparator from the original, now a one-liner.
+        var lexComp = new CountingComparator<Integer>(
+                (a, b) -> a.toString().compareTo(b.toString())
+        );
+        ai.sort(lexComp);
+        System.out.println("Sorted lexicographically (lambda): " + ai);
+        System.out.println("Comparisons needed: " + lexComp.getCount());
+
+        // --- Comparator.comparing (Java 8+) ---
+        // The most modern idiom: build comparators from key-extraction functions.
+        // Read this as "compare integers by their string representation."
+        ai.sort(Comparator.comparing(Object::toString));
+        System.out.println("Sorted via Comparator.comparing: " + ai);
+
+        // Chained comparators: first by parity (even before odd), then by value.
+        // thenComparing builds compound sort keys, analogous to Python's tuple keys.
+        Comparator<Integer> parityThenValue = Comparator
+                .comparingInt((Integer x) -> x % 2)  // 0 (even) before 1 (odd)
+                .thenComparingInt(x -> x);            // then by natural order
+        ai.sort(parityThenValue);
+        System.out.println("Sorted even-first, then by value: " + ai);
+
+        // reversed() flips any comparator. These compose freely.
+        ai.sort(parityThenValue.reversed());
+        System.out.println("Reversed: " + ai);
+
+        System.out.println("Comparators demo ends.\n");
     }
 
     public static void main(String[] args) {

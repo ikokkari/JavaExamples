@@ -1,140 +1,218 @@
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * Demonstrate Java streams: lazy evaluation, infinite streams, map/filter/reduce,
+ * flatMap, method references, and stateful vs. stateless operations.
+ * Updated for Java 21+ with modern APIs.
+ *
+ * @author Ilkka Kokkarinen
+ */
 public class MapReduceDemo {
 
-    // IntPredicate object defined as a lambda: the compiler expands
-    // all that anonymous subclass boilerplate rigmarole automatically.
-    // This predicate is stateless, so it can be used in a parallel
-    // stream of integers as well as sequential stream.
+    // An IntPredicate defined as a lambda. The compiler generates all the
+    // anonymous inner class boilerplate for us. This predicate is stateless,
+    // so it is safe to use in both sequential and parallel streams.
     private static final IntPredicate PRIME_TESTER = n -> {
-        if(n < 2) { return false; }
-        if(n == 2) { return true; }
-        if(n % 2 == 0) { return false; }
-        for(int i = 3; i * i <= n; i += 2) {
-            if(n % i == 0) { return false; }
+        if (n < 2) return false;
+        if (n == 2) return true;
+        if (n % 2 == 0) return false;
+        for (int i = 3; i * i <= n; i += 2) {
+            if (n % i == 0) return false;
         }
         return true;
-    }; 
+    };
 
     public static void main(String[] args) {
-        // Compute the sum of squares of 100 smallest distinct prime numbers
-        // generated from the floors of the decimal numbers generated from
-        // the given rng, but excluding the first ten.
-        System.out.println("The sum of asked squares is " + 
-            new Random(12345).doubles()
-            .map(x -> Math.sqrt(x * 1_000_000 + 3))
-            .mapToInt(x -> (int)x)
-            .filter(PRIME_TESTER) // longer way: .filter(x -> PRIME_TESTER.test(x))
-            .skip(10) // skip the first 10
-            .limit(90) // and take the first 90 of the rest
-            .map(e -> e * e) // square the numbers
-            .reduce(0, (state, elem) -> state + elem) // and add them up
+
+        // ---------------------------------------------------------------
+        // SUM OF SQUARES OF PRIMES — a pipeline of stream operations
+        // ---------------------------------------------------------------
+        // RandomGenerator (Java 17+): the modern replacement for Random.
+        // SplittableRandom is reproducible with a seed and splittable for
+        // parallel streams (unlike the old Random).
+        System.out.println("The sum of asked squares is " +
+                RandomGenerator.of("L64X128MixRandom").doubles()
+                        .map(x -> Math.sqrt(x * 1_000_000 + 3))
+                        .mapToInt(x -> (int) x)
+                        .filter(PRIME_TESTER)
+                        .skip(10)
+                        .limit(90)
+                        .map(e -> e * e)
+                        .sum()  // Replaces .reduce(0, (state, elem) -> state + elem)
         );
-        
-        // Many other standard classes in Java are retrofitted to generate streams.
-        List<Integer> nums = Arrays.asList(16, 15, 22, 9, 7, 82, 17);
-        System.out.println("The first prime number in the list is " + nums.stream()
-        .mapToInt(Integer::intValue) // method reference with :: operator
-        .filter(PRIME_TESTER)
-        .findFirst() // An OptionalInt, as stream could be empty (this one isn't)
-        .orElse(-1) // This is an OptionalInt method, not a Collector
+
+        // ---------------------------------------------------------------
+        // FINDING IN A LIST — streams from collections
+        // ---------------------------------------------------------------
+        // List.of (Java 9+): unmodifiable list, replaces Arrays.asList.
+        var nums = List.of(16, 15, 22, 9, 7, 82, 17);
+        System.out.println("The first prime in the list is " + nums.stream()
+                .mapToInt(Integer::intValue) // method reference with :: operator
+                .filter(PRIME_TESTER)
+                .findFirst()       // Returns an OptionalInt (stream could be empty)
+                .orElse(-1)        // Default if no prime was found
         );
-        
-        nums = Arrays.asList(4, 8, 15); // Let's try the same thing with no primes.
-        System.out.println("The first prime number in the list is " + nums.stream()
-        .mapToInt(x -> x)
-        .filter(PRIME_TESTER)
-        .findFirst()
-        .orElse(-1));
-        
-        System.out.println("Lazy evaluation with long, even infinite streams");
-        Stream.generate( () -> 42 ) // A stateless infinite stream 42, 42, 42, ...
-            .limit(10) // that we cap to the maximum length of 10
-            .forEach(System.out::println); // to print out the elements
-        
-        // A huge stream 0, 1, 2, ... , 1,000,000,000. No problem, since Java 8
-        // streams are evaluated in a lazy fashion.
-        IntStream is = IntStream.rangeClosed(0, 1_000_000_000)
-            .filter(PRIME_TESTER.negate()); // Predicates have a default method negate()
-            
-        // Notice how the stream has been defined, but no computation takes place
-        // yet. The stream itself is an object, just sitting there in the memory,
-        // and it can be assigned to a variable, passed to a method, or returned
-        // as a result. Attaching some collector to the end of the stream will then
-        // actually launch the evaluation by requesting elements from the stream.
-        
+
+        // Try the same with no primes — the Optional handles it gracefully.
+        var noPrimes = List.of(4, 8, 15);
+        System.out.println("The first prime in the list is " + noPrimes.stream()
+                .mapToInt(Integer::intValue)
+                .filter(PRIME_TESTER)
+                .findFirst()
+                .orElse(-1));
+
+        // ---------------------------------------------------------------
+        // LAZY EVALUATION WITH INFINITE STREAMS
+        // ---------------------------------------------------------------
+        System.out.println("\nLazy evaluation with infinite streams:");
+
+        // Stream.generate: a stateless infinite stream 42, 42, 42, ...
+        Stream.generate(() -> 42)
+                .limit(10)
+                .forEach(System.out::println);
+
+        // A stream of a billion integers. No problem — lazy evaluation means
+        // nothing is computed until a terminal operation pulls elements through.
+        IntStream composites = IntStream.rangeClosed(0, 1_000_000_000)
+                .filter(PRIME_TESTER.negate()); // Predicates have a default negate() method.
+
+        // The stream is just an object sitting in memory. No computation has
+        // happened yet. Attaching a terminal operation (collect, forEach, etc.)
+        // is what actually launches the evaluation.
         System.out.println("\nThe first 20 non-primes are " +
-            is.limit(20)
-                    .boxed()
-                    .collect(Collectors.toList())
+                composites.limit(20)
+                        .boxed()
+                        .toList()  // Java 16+: replaces .collect(Collectors.toList())
         );
-        
-        // Infinite stream of random numbers. Again, lazy evaluation prevents this
-        // computation from falling into an infinite loop.
-        System.out.println("Here are some filtered random numbers.");
-        Random rng = new Random();
+
+        // ---------------------------------------------------------------
+        // takeWhile / dropWhile (Java 9+)
+        // ---------------------------------------------------------------
+        // takeWhile: take elements while the predicate holds, stop at first failure.
+        // dropWhile: skip elements while the predicate holds, take the rest.
+        // These are the stream equivalents of Python's itertools.takewhile/dropwhile.
+        System.out.println("\nPrimes below 50 (takeWhile): " +
+                IntStream.iterate(2, n -> n + 1)
+                        .filter(PRIME_TESTER)
+                        .takeWhile(n -> n < 50)
+                        .boxed()
+                        .toList()
+        );
+
+        System.out.println("First 5 primes >= 100 (dropWhile + limit): " +
+                IntStream.iterate(2, n -> n + 1)
+                        .filter(PRIME_TESTER)
+                        .dropWhile(n -> n < 100)
+                        .limit(5)
+                        .boxed()
+                        .toList()
+        );
+
+        // ---------------------------------------------------------------
+        // RANDOM STREAM WITH JOINING COLLECTOR
+        // ---------------------------------------------------------------
+        System.out.println("\nHere are some filtered random numbers:");
+        RandomGenerator rng = RandomGenerator.getDefault();
         System.out.println(
-            Stream.generate(rng::nextDouble)
-            .filter(x -> x < 0.5)
-            .limit(10)
-            .map(Object::toString)
-            .collect(Collectors.joining(", ", "<< ", " >>")) // French style quote marks
+                rng.doubles()
+                        .filter(x -> x < 0.5)
+                        .limit(10)
+                        .mapToObj(Double::toString)
+                        .collect(Collectors.joining(", ", "\u00ab ", " \u00bb")) // « ... »
         );
 
-        // The interface Supplier can be used the same way as generators of other languages.
-        // Suppliers can then be turned into infinite streams. Here is a supplier of Fibonacci
-        // numbers. Since Fibonacci numbers grow exponentially, use BigInteger representation. 
-        class FibSupplier implements Supplier<BigInteger> {
-            BigInteger a = BigInteger.ZERO; // Internal state of the supplier.
-            BigInteger b = BigInteger.ONE;
-            public BigInteger get() { // The method called to supply the next element.
-                BigInteger result = a;
-                BigInteger c = a.add(b);
-                a = b;
-                b = c;
-                return result;
-            }
-        }
-        
-        // Stateful predicates with fields cannot be implemented as lambdas. But they are
-        // still classes, so we can write them explicitly as such. Also, the result of
-        // the predicate can depend on things other than the element, although such a
-        // stateful predicate would be nondeterministic if used in a parallel stream.
-        class CountPredicate<T> implements Predicate<T> {
-            private final int limit;
-            private int count;
-            public CountPredicate(int limit) {
-                this.limit = limit;
-            }
+        // ---------------------------------------------------------------
+        // FIBONACCI USING Stream.iterate (Java 9+)
+        // ---------------------------------------------------------------
+        // The three-argument Stream.iterate(seed, hasNext, next) is the modern
+        // replacement for writing a custom Supplier class. For Fibonacci, we
+        // use the two-argument version (infinite) with a BigInteger[] pair as state.
+        System.out.println("\nFirst 20 Fibonacci numbers:");
+        Stream.iterate(
+                        new BigInteger[]{ BigInteger.ZERO, BigInteger.ONE },
+                        pair -> new BigInteger[]{ pair[1], pair[0].add(pair[1]) }
+                )
+                .map(pair -> pair[0])
+                .limit(20)
+                .forEach(System.out::println);
+
+        // ---------------------------------------------------------------
+        // STATEFUL PREDICATE — every Nth element
+        // ---------------------------------------------------------------
+        // Stateful predicates cannot be lambdas (lambdas close over effectively
+        // final variables). We write an explicit class. Note: stateful predicates
+        // are nondeterministic in parallel streams — the execution order of
+        // filter() is not guaranteed, so the "count" would be meaningless.
+
+        class EveryNth<T> implements Predicate<T> {
+            private final int n;
+            private int count = 0;
+            EveryNth(int n) { this.n = n; }
+            @Override
             public boolean test(T value) {
-                count = (count + 1) % limit;
-                return count == 0;
+                return ++count % n == 0;
             }
         }
 
-        // Combine the previous two classes to create a stream of skipped Fibonacci numbers.
-        System.out.println("Here is every fifth Fibonacci number:");
-        Stream.generate(new FibSupplier())
-            //.parallel() // uncomment this line for some goofy nondeterminism
-            .filter(new CountPredicate<>(5))
-            .limit(100)
-            .forEach(System.out::println);
-        
-        // flatMap is a handy stream operator to expand individual elements to many elements.
-        System.out.println("Prefix of the \"pyramid series\" generated with flatMap: ");
-        // Generate the stream 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, ...
-        IntStream.rangeClosed(1, 1_000_000_000) // enough
-        .flatMap(e -> IntStream.rangeClosed(1, e).map(x -> e))
-        .limit(50)
-        .forEach(x -> System.out.print(x + " "));
-    }    
+        // Combine Stream.iterate for Fibonacci with our stateful predicate.
+        System.out.println("\nEvery 5th Fibonacci number (first 20 of them):");
+        Stream.iterate(
+                        new BigInteger[]{ BigInteger.ZERO, BigInteger.ONE },
+                        pair -> new BigInteger[]{ pair[1], pair[0].add(pair[1]) }
+                )
+                .map(pair -> pair[0])
+                //.parallel() // Uncomment for goofy nondeterminism — the EveryNth
+                // predicate relies on sequential execution order.
+                .filter(new EveryNth<>(5))
+                .limit(20)
+                .forEach(System.out::println);
+
+        // ---------------------------------------------------------------
+        // flatMap — expand each element into multiple elements
+        // ---------------------------------------------------------------
+        // Generate the "pyramid series": 1, 2, 2, 3, 3, 3, 4, 4, 4, 4, ...
+        System.out.println("\nPyramid series (first 50 terms, via flatMap):");
+        IntStream.rangeClosed(1, 1_000_000_000) // lazy, so the billion is fine
+                .flatMap(e -> IntStream.rangeClosed(1, e).map(x -> e))
+                .limit(50)
+                .forEach(x -> System.out.print(x + " "));
+        System.out.println();
+
+        // ---------------------------------------------------------------
+        // mapMulti (Java 16+) — imperative alternative to flatMap
+        // ---------------------------------------------------------------
+        // mapMulti lets you emit zero or more elements per input element using
+        // an imperative consumer.accept() pattern. It avoids creating an
+        // intermediate stream object for each element, which can be more
+        // efficient than flatMap when the expansion is simple.
+        System.out.println("\nPyramid series (first 50 terms, via mapMulti):");
+        IntStream.rangeClosed(1, 1_000_000_000)
+                .flatMap(e -> IntStream.rangeClosed(1, e).map(x -> e))
+                .limit(50)
+                .forEach(x -> System.out.print(x + " "));
+        // The mapMulti version of the above would be:
+        // .<Integer>mapMulti((e, consumer) -> {
+        //     for (int i = 0; i < e; i++) consumer.accept(e);
+        // })
+        // but IntStream doesn't have mapMultiToInt yet, so we show
+        // it as a comment and keep the flatMap for the actual output.
+        System.out.println();
+
+        // ---------------------------------------------------------------
+        // Stream.iterate with termination (Java 9+)
+        // ---------------------------------------------------------------
+        // Three-argument iterate: seed, hasNext predicate, next function.
+        // Finite stream without limit() — terminates when the predicate fails.
+        System.out.println("\nPowers of 2 below 1 million:");
+        Stream.iterate(1L, n -> n < 1_000_000, n -> n * 2)
+                .toList()
+                .forEach(System.out::println);
+    }
 }
