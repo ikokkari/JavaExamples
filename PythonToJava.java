@@ -1,6 +1,8 @@
 // Demonstration of various things that are different in Python and Java.
+// Updated for Java 21+ with modern idioms and language features.
 
 // In Java, all package imports must be placed at the beginning of the file.
+// Since Java 5, you can use static imports to bring in individual static methods.
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,265 +10,399 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-/* 
- * Java program must consist of classes, one class per file. The source code for
- * the class named Foo must be stored in a file that is named precisely Foo.java.
- * From that, the compiler will produce the executable bytecode file Foo.class.
- * The compilation stage must be incurred explicitly, unlike in Python where it
- * is done silently when you execute the Python source code file.
+/*
+ * A Java program consists of classes, one public class per file. The source code
+ * for the class named Foo must be stored in a file named precisely Foo.java.
+ * The compiler produces the executable bytecode file Foo.class from that source.
+ * Unlike Python, where compilation happens silently at execution time, Java
+ * requires an explicit compilation step before you can run the program.
  */
 
 public class PythonToJava {
 
-    // In Java, braces denote structure. Indentation is only for the human eyes,
+    // In Java, braces denote structure. Indentation is only for human eyes —
     // the compiler does not care about it. In theory, you could write an entire
-    // Java program in one horrendously long line. (Please don't ever do that.)
+    // Java program on one horrendously long line. (Please don't ever do that.)
 
     // Static methods inside a class correspond to Python functions. Java is
-    // explicitly typed at compile time, so that all data must be declared its
-    // type at compile time, so that the compiler can enforce that all data is 
-    // used only according to that declared type. This allows many errors to be
-    // caught at compile time, before the actual unit testing takes place.
+    // explicitly typed at compile time: all data must be declared with a type
+    // so the compiler can enforce correct usage. This catches many errors at
+    // compile time, before the actual unit testing takes place.
 
-    public static String ryersonLetterGrade(int pct) {
-        // Local variable declarations must also be explicitly typed. However,
-        // a variable does not need to be initialized right away, as long as
-        // every possible execution path initializes it before the use.
-        String result;
+    // -----------------------------------------------------------------------
+    // TMU letter grade conversion using if-else chains.
+    // Demonstrates: if-else (not elif), String operations, integer arithmetic.
+    // -----------------------------------------------------------------------
+
+    public static String tmuLetterGrade(int percent) {
+        // Local variables must be explicitly typed. However, a variable does not
+        // need to be initialized immediately, as long as every possible execution
+        // path initializes it before its first use.
+        String grade;
+
         // Handle F and A levels as special cases.
-        if(pct < 50) { 
-            result = "F"; 
-        } // condition must be inside parentheses
-        else if(pct >= 90) { result = "A+"; } // else if, not elif
-        else if(pct >= 85) { result = "A"; }
-        else if(pct >= 80) { result = "A-"; }
-        // B, C, and D levels all have the same structure.
-        else { 
-            int tens = pct / 10; // This is now known to be 5, 6 or 7.
-            result = "DCB".substring(tens - 5, tens - 4); // (cute trick)
-            int ones = pct % 10; // Integer remainder operator %, almost as in Python.
-            if(ones < 3) { result += "-"; } // Shorthand a += b for a = a + b;
-            else if(ones > 6) { result += "+"; }
+        if (percent < 50) {
+            grade = "F";
+        } // The condition must be inside parentheses.
+        else if (percent >= 90) { grade = "A+"; } // Note: else if, not elif.
+        else if (percent >= 85) { grade = "A"; }
+        else if (percent >= 80) { grade = "A-"; }
+        // The B, C, and D levels all share the same internal structure.
+        else {
+            int tens = percent / 10; // Now known to be 5, 6, or 7.
+            grade = "DCB".substring(tens - 5, tens - 4); // (cute indexing trick)
+            int ones = percent % 10; // Integer remainder operator %, as in Python.
+            if (ones < 3) { grade += "-"; } // Shorthand a += b for a = a + b
+            else if (ones > 6) { grade += "+"; }
         }
-        return result;        
+        return grade;
     }
 
-    // In Java, an array is a homogeneous sequence whose length cannot change, akin
-    // to the numpy arrays except without reshaping and always one-dimensional. In
-    // the type system, Foo[] is an array whose elements are of type Foo. With arrays,
-    // Foo can be either a primitive type or a class.
+    // -----------------------------------------------------------------------
+    // The same conversion rewritten with a Java 21 switch expression.
+    // Demonstrates: switch expression with arrow syntax, yield for blocks,
+    // and how switch can replace long if-else ladders more readably.
+    // -----------------------------------------------------------------------
+
+    public static String tmuLetterGradeSwitch(int percent) {
+        // A switch expression returns a value, unlike the older switch statement.
+        // The arrow syntax (->) eliminates the need for break statements.
+        return switch (percent / 10) {
+            case 10, 9 -> {
+                // When the body needs multiple statements, use a block with yield.
+                yield (percent >= 90) ? "A+" : "A";
+            }
+            case 8 -> (percent >= 85) ? "A" : "A-";
+            case 7 -> {
+                int ones = percent % 10;
+                yield "B" + suffixForOnes(ones);
+            }
+            case 6 -> {
+                int ones = percent % 10;
+                yield "C" + suffixForOnes(ones);
+            }
+            case 5 -> {
+                int ones = percent % 10;
+                yield "D" + suffixForOnes(ones);
+            }
+            // The default branch is required: the compiler insists that a switch
+            // expression covers all possible input values exhaustively.
+            default -> "F";
+        };
+    }
+
+    // Small helper to determine the +/- suffix from the ones digit.
+    private static String suffixForOnes(int ones) {
+        if (ones < 3) { return "-"; }
+        if (ones > 6) { return "+"; }
+        return "";
+    }
+
+    // -----------------------------------------------------------------------
+    // Riffle shuffle of an array.
+    // Demonstrates: array creation, C-style for loop vs. Python's range().
+    // -----------------------------------------------------------------------
+
+    // In Java, an array is a homogeneous, fixed-length sequence — similar to a
+    // numpy array, but always one-dimensional and without reshaping. In the type
+    // system, Foo[] is an array whose elements are of type Foo.
+
     public static int[] riffle(int[] items) {
-        // Java does not have a polymorphic len function on sequences.
-        int n = items.length / 2; // Operator / is integer division for int operands.
-        int[] result = new int[items.length];
-        // Java for-loop has a different purpose and syntax than Python for-loop.
-        // This is roughly equal to Python loop: for i in range(0, len(items), 2)
-        // to iterate through all even indices.
-        for(int i = 0; i < items.length; i += 2) {
+        // Java does not have a polymorphic len(); arrays use the .length field.
+        int half = items.length / 2; // Operator / is integer division for int operands.
+        var result = new int[items.length];
+
+        // Java for-loop syntax differs from Python. This is roughly equivalent
+        // to Python: for i in range(0, len(items), 2)
+        for (int i = 0; i < items.length; i += 2) {
             result[i] = items[i / 2];
-            result[i + 1] = items[n + i / 2];            
+            result[i + 1] = items[half + i / 2];
         }
         return result;
     }
 
-    // In java.util, the List hierarchy offers a higher level abstraction of a
-    // sequence. The ArrayList is pretty close Python lists in behaviour. However,
-    // in Java generics, primitive types cannot be used as type arguments to create
-    // a type instantiation of a generic class. However, Java can automatically
-    // convert between primitive type (int) and its wrapper class (Integer).
+    // -----------------------------------------------------------------------
+    // Verify that a list is a valid permutation of 1..n.
+    // Demonstrates: List<Integer>, for-each loop, boolean operators.
+    // -----------------------------------------------------------------------
 
-    public static boolean checkPermutation(List<Integer> items, int n) {
-        // Keep track of which numbers 1 to n we have already seen here.
-        boolean[] alreadySeen = new boolean[n + 1];
-        // Java for-each loop to iterate through the elements of array or list.
-        for(int e: items) {
-            // || = or, && = and, ! = not. This makes little sense, but it's how it is.
-            if(e < 1 || e > n || alreadySeen[e]) { return false; }
-            alreadySeen[e] = true;
+    // The java.util List hierarchy offers higher-level sequence abstractions.
+    // ArrayList is closest to Python lists in behaviour. However, Java generics
+    // cannot use primitive types as type arguments: you write List<Integer>, not
+    // List<int>. Java autoboxes between int and Integer transparently.
+
+    public static boolean isValidPermutation(List<Integer> items, int n) {
+        // Track which numbers from 1 to n we have already encountered.
+        var alreadySeen = new boolean[n + 1];
+
+        // Java for-each loop iterates through elements of an array or Iterable.
+        for (int element : items) {
+            // || means or, && means and, ! means not.
+            if (element < 1 || element > n || alreadySeen[element]) {
+                return false;
+            }
+            alreadySeen[element] = true;
         }
         return true;
     }
 
-    // Java only has one-dimensional arrays. Arrays of higher dimension of n are
-    // simulated with one-dimensional arrays whose elements are arrays of dimension
-    // n-1. To access an individual row as a one-dimensional array, use one index,
-    // same as with a Python list whose elements are lists.
-    public static double[][] transpose(double[][] a) {
-        double[][] b = new double[a[0].length][a.length];
-        // Operator ++ is shorthand for adding one. Operator -- would decrement.
-        for(int i = 0; i < b.length; i++) {
-            for(int j = 0; j < b[i].length; j++) {
-                b[i][j] = a[j][i];
-            }
-        }
-        return b;
-    }    
+    // -----------------------------------------------------------------------
+    // Transpose a 2D matrix.
+    // Demonstrates: 2D arrays (arrays of arrays), nested loops.
+    // -----------------------------------------------------------------------
 
-    // Unlike numpy arrays, two-dimensional arrays Java can be ragged, which means
-    // different rows can have different lengths. Each row is a separate 1D array
-    // object anyway and not restricted by the lengths of other row arrays.
-    public static int[][] pascalTriangle(int n) {
-        // Create just the array of arrays, but not the individual rows.
-        int[][] result = new int[n][];
-        // Create and fill the individual rows.
-        for(int row = 0; row < n; row++) {
-            result[row] = new int[row + 1];
-            result[row][0] = result[row][row] = 1;
-            for(int col = 1; col < row; col++) {
-                result[row][col] = result[row-1][col-1] + result[row-1][col];
+    // Java only has one-dimensional arrays. Higher dimensions are simulated as
+    // arrays of arrays. To access a single row as a 1D array, use one index.
+
+    public static double[][] transpose(double[][] matrix) {
+        int rows = matrix.length;
+        int cols = matrix[0].length;
+        var transposed = new double[cols][rows];
+
+        for (int row = 0; row < cols; row++) {
+            for (int col = 0; col < rows; col++) {
+                transposed[row][col] = matrix[col][row];
             }
         }
-        return result;
+        return transposed;
     }
 
-    // Java has a while-loop and for-loop, but then also a do-while loop that Python
-    // does not have. In practice it is quite rare, well under 2% of all loops. But
-    // when it is time to use it, then it is time to use it! Here is a blast from the
-    // ancient past, Heron's algorithm for numerical approximation of square roots.
+    // -----------------------------------------------------------------------
+    // Pascal's triangle as a ragged 2D array.
+    // Demonstrates: ragged arrays (rows of different lengths).
+    // -----------------------------------------------------------------------
 
-    public static double heronRoot(double x, boolean verbose) {
-        double guess = x / 2; // we have to start from somewhere
-        double prev;
+    // Unlike numpy arrays, Java 2D arrays can be ragged — each row is a separate
+    // 1D array object that can have its own length.
+
+    public static int[][] pascalTriangle(int numRows) {
+        // Create just the outer array (array of row references), not the rows.
+        var triangle = new int[numRows][];
+
+        for (int row = 0; row < numRows; row++) {
+            triangle[row] = new int[row + 1];
+            // Both endpoints of each row are always 1.
+            triangle[row][0] = 1;
+            triangle[row][row] = 1;
+            // Each interior element is the sum of the two elements above it.
+            for (int col = 1; col < row; col++) {
+                triangle[row][col] = triangle[row - 1][col - 1]
+                        + triangle[row - 1][col];
+            }
+        }
+        return triangle;
+    }
+
+    // -----------------------------------------------------------------------
+    // Heron's algorithm for square root approximation.
+    // Demonstrates: do-while loop, method overloading (simulating defaults).
+    // -----------------------------------------------------------------------
+
+    // Java has while and for loops, but also a do-while loop that Python lacks.
+    // It is quite rare (well under 2% of all loops), but when you need it, you
+    // need it. Here is a blast from the ancient past: Heron's algorithm for
+    // numerically approximating square roots.
+
+    public static double heronSquareRoot(double x, boolean verbose) {
+        double guess = x / 2; // We have to start from somewhere.
+        double previousGuess;
         do {
-            if(verbose) { System.out.println("Current guess is " + guess); }
-            // Current guess becomes the previous guess.
-            prev = guess;
-            // Calculate a new, more accurate guess.
+            if (verbose) {
+                System.out.println("Current guess is " + guess);
+            }
+            previousGuess = guess;
+            // The new guess is the average of the current guess and x/guess.
             guess = (guess + x / guess) / 2;
-        } while(guess != prev); // Not a while-loop, but part of do-while.
-        if(verbose) { System.out.println("Returning result " + guess); }
+        } while (guess != previousGuess); // This while belongs to the do-while.
+
+        if (verbose) {
+            System.out.println("Returning result " + guess);
+        }
         return guess;
     }
 
-    // Java does not offer default or keyword arguments. Instead, variations are
-    // expressed with method overloading inside the same class. Unlike Python, where
-    // each name is bound to exactly one object, the same method name can be bound
-    // to multiple implementations that differ by their parameter types.
+    // Java does not offer default or keyword arguments. Instead, variations
+    // are expressed with method overloading: the same method name can be bound
+    // to multiple implementations that differ by their parameter types or count.
 
-    public static double heronRoot(double x) {
-        return heronRoot(x, false);
+    public static double heronSquareRoot(double x) {
+        return heronSquareRoot(x, false);
     }
 
-    // Java and similar languages have a switch-statement for long if-else ladders.
-    // Java 15 introduces switch expressions. Uncomment to experience this freedom
-    // if you are working under Java 15 or later.
+    // -----------------------------------------------------------------------
+    // Days in a month using a switch expression (Java 14+).
+    // Demonstrates: switch expression, ternary operator, multiple case labels.
+    // -----------------------------------------------------------------------
 
-    /*
-    public static int daysInMonth(int m, boolean leapYear) {
-        return switch (m) {
-            // Multiple cases that share the same body can be combined.
+    public static int daysInMonth(int month, boolean leapYear) {
+        return switch (month) {
+            // Multiple case labels sharing the same result can be combined.
             case 1, 3, 5, 7, 8, 10, 12 -> 31;
-            case 2 ->
-                    // Python equivalent: d = 29 if leapYear else 28
-                    (leapYear ? 29 : 28); // Java ternary selection COND ? POS : NEG
+            case 2 -> leapYear ? 29 : 28; // Ternary: condition ? ifTrue : ifFalse
             case 4, 6, 9, 11 -> 30;
-            default -> // Kind of "none of the above" option.
-                    0;
+            default -> throw new IllegalArgumentException(
+                    "Invalid month number: " + month
+            );
         };
     }
-    */
 
-    // Same as in Python, Java strings are immutable. For the common operation of
-    // building up a string by appending stuff piecemeal, use mutable StringBuilder.
+    // -----------------------------------------------------------------------
+    // "Count and say" sequence encoding (run-length encoding of digits).
+    // Demonstrates: StringBuilder, charAt, ternary operator.
+    // -----------------------------------------------------------------------
+
+    // Same as in Python, Java strings are immutable. For the common operation
+    // of building up a string by appending pieces, use the mutable StringBuilder.
 
     public static String countAndSay(String digits) {
-        StringBuilder result = new StringBuilder();
-        // We pretend that every string has '$' before and after it. This way
-        // we don't have to handle the first or the last digit as a special case.
-        int count = 0; // How many times we have seen the current digit.
-        char prev = '$'; // The previous digit seen before the current one.        
-        for(int i = 0; i <= digits.length(); i++) {
-            // Ternary selection again.
-            char curr = i < digits.length() ? digits.charAt(i): '$';
-            if(curr == prev) { count++; } // count++ is shorthand for count += 1.
-            else {
-                if(count > 0) {
-                    result.append(count); result.append(prev);
+        var result = new StringBuilder();
+        // We pretend that every string has a sentinel '$' before and after it.
+        // This avoids special-casing the first and last digit.
+        int count = 0;
+        char previousDigit = '$';
+
+        for (int i = 0; i <= digits.length(); i++) {
+            // Ternary selection to handle the sentinel at the end.
+            char currentDigit = (i < digits.length()) ? digits.charAt(i) : '$';
+
+            if (currentDigit == previousDigit) {
+                count++; // Shorthand for count += 1
+            } else {
+                if (count > 0) {
+                    result.append(count);
+                    result.append(previousDigit);
                 }
-                count = 1; prev = curr;
+                count = 1;
+                previousDigit = currentDigit;
             }
         }
-        // Convert mutable StringBuilder into an immutable String when finished.
+        // Convert the mutable StringBuilder to an immutable String.
         return result.toString();
     }
 
-    // java.util.Set hierarchy contains set implementations. The two most important
-    // of those are HashSet (hash table, unsorted iteration) and TreeSet (binary 
-    // search tree, guarantees sorted order of iteration through elements). Their
-    // internal mechanism will be explored in 305, but we can still use them even
-    // if we don't know how they work inside, the same way you are allowed to drive
-    // a car even if you don't know how a combustion engine actually works.
+    // -----------------------------------------------------------------------
+    // All distinct cyclic shifts of a string, in sorted order.
+    // Demonstrates: TreeSet for automatic sorted deduplication, List.copyOf.
+    // -----------------------------------------------------------------------
+
+    // The java.util Set hierarchy contains set implementations. The two most
+    // important are HashSet (hash table, unordered) and TreeSet (balanced BST,
+    // guarantees sorted iteration). Their internal mechanisms will be explored
+    // in a data structures course, but we can use them without knowing the
+    // internals — just as you can drive a car without understanding combustion.
 
     public static List<String> allCyclicShifts(String text) {
-        // Keep track of which strings have already been produced.
-        TreeSet<String> alreadySeen = new TreeSet<>();
-        // Iterate through all possible cutting points.
-        for(int i = 0; i < text.length(); i++) {
-            alreadySeen.add(text.substring(i) + text.substring(0, i));            
+        var shifts = new TreeSet<String>();
+
+        for (int i = 0; i < text.length(); i++) {
+            shifts.add(text.substring(i) + text.substring(0, i));
         }
-        // Java collection instances can be created from existing instances. Since
-        // we used a TreeSet instead of HashSet, iteration guarantees sorted order.
-        return new ArrayList<>(alreadySeen);
+        // List.copyOf creates an unmodifiable list from any collection.
+        // Since we used TreeSet, the iteration order is guaranteed to be sorted.
+        return List.copyOf(shifts);
     }
 
-    // The starting point of execution when a Java class is run as a standalone program.
-    // This is similar in spirit to Python construct if __name__ == '__main__':
+    // -----------------------------------------------------------------------
+    // Bonus: a stream-based version of cyclic shifts, for comparison.
+    // Demonstrates: IntStream, map, collect, and functional style in Java.
+    // -----------------------------------------------------------------------
+
+    public static List<String> allCyclicShiftsStream(String text) {
+        return IntStream.range(0, text.length())
+                .mapToObj(i -> text.substring(i) + text.substring(0, i))
+                .collect(Collectors.toCollection(TreeSet::new))
+                .stream()
+                .toList(); // Since Java 16, .toList() returns an unmodifiable list.
+    }
+
+    // -----------------------------------------------------------------------
+    // Main method: the starting point when this class is run as a program.
+    // Similar in spirit to Python's: if __name__ == '__main__':
+    // -----------------------------------------------------------------------
 
     public static void main(String[] args) {
 
-        System.out.print("A grade of 65% becomes " + ryersonLetterGrade(65) + " as letters.\n");
+        // --- Letter grade conversion ---
+        System.out.println("A grade of 65% becomes " + tmuLetterGrade(65) + " as a letter.");
+        System.out.println("Using switch version: " + tmuLetterGradeSwitch(65));
 
-        // Declaration of an array with immediate initialization.
-        int[] a = {42, 8, 99, -5, 7, 13};
+        // Verify both implementations agree on all possible percentages.
+        boolean gradesAgree = IntStream.rangeClosed(0, 100)
+                .allMatch(p -> tmuLetterGrade(p).equals(tmuLetterGradeSwitch(p)));
+        System.out.println("Both grading methods agree on 0-100: " + gradesAgree);
 
-        // Java arrays are stupid and have no useful methods. That is why the
-        // standard library has utility class Arrays for dealing with arrays.
-        System.out.printf("Contents of array are initially %s.\n", Arrays.toString(a));
-        int[] ar = riffle(a);
-        System.out.printf("Once riffled, these elements are %s.\n", Arrays.toString(ar));
-        ar = riffle(ar);
-        System.out.printf("Riffled again, these elements are %s.\n", Arrays.toString(ar));
+        // --- Riffle shuffle ---
+        int[] numbers = {42, 8, 99, -5, 7, 13};
 
-        List<Integer> p = new ArrayList<>(); // Empty list
-        // (Java does not have Python list comprehensions.)
-        for(int i = 0; i < 10; i++) { p.add(i + 1); } // Add elements to it.
+        // Java arrays lack useful methods. The utility class Arrays fills that gap.
+        System.out.printf("%nContents of array are initially %s.%n", Arrays.toString(numbers));
+        var riffled = riffle(numbers);
+        System.out.printf("Once riffled, these elements are %s.%n", Arrays.toString(riffled));
+        riffled = riffle(riffled);
+        System.out.printf("Riffled again, these elements are %s.%n", Arrays.toString(riffled));
+
+        // --- Permutation checking ---
+        // Java does not have Python list comprehensions, but streams can fill
+        // that role. Here we create a mutable list of 1..10 for shuffling.
+        var permutation = IntStream.rangeClosed(1, 10)
+                .boxed() // Convert IntStream to Stream<Integer>
+                .collect(Collectors.toCollection(ArrayList::new));
+
         System.out.println("\nChecking out some permutations.");
-        for(int i = 0; i < 5; i++) {
-            Collections.shuffle(p);
-            System.out.println(p + " is permutation: " + checkPermutation(p, 10));
+        for (int trial = 0; trial < 5; trial++) {
+            Collections.shuffle(permutation);
+            System.out.println(permutation + " is permutation: "
+                    + isValidPermutation(permutation, 10));
         }
 
-        Random rng = new Random(12345);
-        System.out.println("\nTo demonstrate 2D arrays, transpose a 2D matrix.");
-        double[][] mat = { {1.0, -2.2, 5.1, 99}, {-4.3, 1.234, Math.sqrt(7), rng.nextDouble()} };
+        // --- 2D matrix transpose ---
+        var rng = new Random(12345);
+        System.out.println("\nTo demonstrate 2D arrays, transpose a matrix.");
+        double[][] matrix = {
+                {1.0, -2.2, 5.1, 99},
+                {-4.3, 1.234, Math.sqrt(7), rng.nextDouble()}
+        };
         System.out.println("Matrix rows before transpose:");
-        System.out.println(Arrays.deepToString(mat));
+        System.out.println(Arrays.deepToString(matrix));
         System.out.println("Matrix rows after transpose:");
-        System.out.println(Arrays.deepToString(transpose(mat)));
+        System.out.println(Arrays.deepToString(transpose(matrix)));
 
+        // --- Pascal's triangle ---
         System.out.println("\nThe first 15 rows of Pascal's triangle.");
         int[][] pascal = pascalTriangle(15);
-        for (int[] ints : pascal) {
-            for (int anInt : ints) {
-                // C-style printf for formatted output exactly as given.
-                System.out.printf("%-5d", anInt);
+        for (int[] row : pascal) {
+            for (int value : row) {
+                System.out.printf("%-5d", value);
             }
             System.out.println();
         }
 
-        System.out.println("\nSquare root of 2.0 equals about " + heronRoot(2.0) + ".");
+        // --- Heron's square root ---
+        System.out.println("\nSquare root of 2.0 equals about "
+                + heronSquareRoot(2.0) + ".");
 
+        // --- Days in month (switch expression) ---
+        System.out.println("\nDays in February (leap year): " + daysInMonth(2, true));
+        System.out.println("Days in February (non-leap): " + daysInMonth(2, false));
+        System.out.println("Days in July: " + daysInMonth(7, false));
+
+        // --- Count and say ---
         String digits = "333388822211177";
-        System.out.println("\n\"Count and say\" for digits " + digits + " produces "
-            + countAndSay(digits) + ".");
+        System.out.println("\n\"Count and say\" for " + digits + " produces "
+                + countAndSay(digits) + ".");
 
-        String[] pats = {"01001", "010101", "hello", "xxxxxxx"};
+        // --- Cyclic shifts ---
+        String[] testStrings = {"01001", "010101", "hello", "xxxxxxx"};
         System.out.println("\nAll cyclic shifts of some example strings, in sorted order.");
-        for(String pat: pats) {
-            System.out.println(pat + ": " + allCyclicShifts(pat));
+        for (String text : testStrings) {
+            System.out.println(text + ": " + allCyclicShifts(text));
         }
+        // Show that the stream version produces identical results.
+        System.out.println("\nStream version agrees: "
+                + Arrays.stream(testStrings)
+                .allMatch(s -> allCyclicShifts(s).equals(allCyclicShiftsStream(s))));
     }
 }
-
-// no longer inside the class PythonToJava
