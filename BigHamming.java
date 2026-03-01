@@ -12,7 +12,7 @@ public class BigHamming {
     private static final BigInteger[] muls = {
         BigInteger.valueOf(2), BigInteger.valueOf(3), BigInteger.valueOf(5)
     };
-    
+
     /**
      * Compute the {@code n}:th Hamming number, with quiet operation.
      * @param n The index of the Hammin number to compute.
@@ -20,7 +20,7 @@ public class BigHamming {
     public BigInteger computeHamming(int n) {
         return computeHamming(n, false);
     }
-    
+
     /**
      * Compute the {@code n}:th Hamming number.
      * @param n The index of the Hamming number to compute.
@@ -32,11 +32,11 @@ public class BigHamming {
         // The elements of the search frontier
         PriorityQueue<BigInteger> frontierQ = new PriorityQueue<>();
         HashSet<BigInteger> frontierS = new HashSet<>();
-        
+
         // Initialize the frontier
         frontierQ.offer(BigInteger.ONE);
         frontierS.add(BigInteger.ONE);
-        
+
         // Invariant: we have generated all Hamming numbers up to the smallest
         // element in the frontier.
         while(true) {
@@ -60,6 +60,6 @@ public class BigHamming {
                     frontierS.add(newB);
                 }
             }
-        }        
+        }
     }
 }
