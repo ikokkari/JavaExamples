@@ -1,167 +1,208 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.util.BitSet;
+import java.util.random.RandomGenerator;
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-import java.util.Random;
 
 /**
- * Animate and display variations of Conway's Game of Life. The game starts running as soon
- * as the object is constructed, and keeps running one step per second until the method
- * {@code terminate} is called to stop the animation timer.
+ * Animate and display variations of Conway's Game of Life. The game starts
+ * running as soon as the object is constructed and keeps running until the
+ * method {@link #terminate()} is called to stop the animation timer.
+ *
+ * <p>Modernized for Java 21+ with records, sealed types, {@code BitSet}
+ * for the rule encoding, and contemporary Swing idioms.
+ *
  * @author Ilkka Kokkarinen
  */
-
 public class GameOfLife extends JPanel {
-    
-    private static final int PIXSIZE = 3;
+
+    private static final int PIX_SIZE = 3;
     private static final int MARGIN = 40;
-    private static final Random rng = new Random();
-    
-    private boolean[][] board, newBoard;
-    private final int size; // size of square grid as tiles 
-    private final String birth; // rules for birth and survival
-    private final String survival; 
-    private final Timer t; // animation timer
-    private final BufferedImage img; // draw directly to BufferedImage for speed
-    private final int aliveColour = Color.BLACK.getRGB(); // colour to draw living cells
-    private final int deadColour = Color.WHITE.getRGB(); // colour to draw dead cells
-        
+    private static final RandomGenerator RNG = RandomGenerator.getDefault();
+
+    // --- Rule encoding ---
+
+    /**
+     * A Life-like cellular automaton rule, encoded as two {@link BitSet}s
+     * for O(1) lookup instead of the old {@code String.indexOf} approach.
+     *
+     * @param birth    neighbour counts that cause a dead cell to become alive
+     * @param survival neighbour counts that let a living cell survive
+     */
+    record Rule(BitSet birth, BitSet survival) {
+
+        /** Parse a rule from the traditional "B.../S..." digit strings. */
+        static Rule of(String birthDigits, String survivalDigits) {
+            return new Rule(parseBits(birthDigits), parseBits(survivalDigits));
+        }
+
+        private static BitSet parseBits(String digits) {
+            var bits = new BitSet(9); // neighbour counts range 0..8
+            for (int i = 0; i < digits.length(); i++) {
+                bits.set(digits.charAt(i) - '0');
+            }
+            return bits;
+        }
+
+        boolean shouldLive(boolean currentlyAlive, int neighbours) {
+            return currentlyAlive ? survival.get(neighbours) : birth.get(neighbours);
+        }
+    }
+
+    // --- Preset rule definitions ---
+
+    /**
+     * A named Game of Life variant bundling its rule, initial fill
+     * probability, and suggested window position.
+     */
+    record Variant(String title, Rule rule, double fillProbability, int windowX, int windowY) { }
+
+    // Eight neighbours as (dx, dy) offsets, unrolled for clarity.
+    private static final int[][] NEIGHBOUR_OFFSETS = {
+            {-1, -1}, {-1, 0}, {-1, 1},
+            { 0, -1},          { 0, 1},
+            { 1, -1}, { 1, 0}, { 1, 1}
+    };
+
+    // --- Instance state ---
+
+    private boolean[][] board;
+    private boolean[][] nextBoard;
+    private final int size;
+    private final Rule rule;
+    private final Timer timer;
+    private final BufferedImage img;
+    private final int aliveRGB = Color.BLACK.getRGB();
+    private final int deadRGB = Color.WHITE.getRGB();
+
     /**
      * Constructor using the original Conway's Game of Life ruleset.
-     * @param size The size of the automaton, measured in cells.
+     *
+     * @param size the side length of the square grid, in cells
      */
-    public GameOfLife(int size) { this(size, "3", "23", 0.30); }
-       
-    /**
-     * Constructor for generalized variants of Conway's Game of Life.
-     * @param size The size of the automaton, measured in cells.
-     * @param birth The string containing the values for which a cell comes alive, e.g. "3".
-     * @param survival The string containing the values for which a cell survives, e.g. "23".
-     * @param prob Probability that a cell is initially alive.
-     */
-    public GameOfLife(int size, String birth, String survival, double prob) {
-        this.size = size;
-        this.birth = birth;
-        this.survival = survival;
-        int pix = size * PIXSIZE;
-        this.img = new BufferedImage(pix, pix, BufferedImage.TYPE_INT_RGB);
-        this.setPreferredSize(new Dimension(pix, pix));
-        this.setBorder(BorderFactory.createRaisedBevelBorder());
-        board = new boolean[size][size]; // initialize the board arrays
-        newBoard = new boolean[size][size];
-        for(int x = MARGIN; x < size - MARGIN; ++x) {
-            for(int y = MARGIN; y < size - MARGIN; ++y) {
-                board[x][y] = rng.nextDouble() < prob;
-            }
-        }
-        this.setBackground(new Color(deadColour));
-        
-        // Tick every 500 milliseconds, generating an action event
-        t = new Timer(500, new MyActionListener());
-        t.setInitialDelay(rng.nextInt(500)); // try to avoid lockstep with multiple games
-        t.start();
-    }
-    
-    /**
-     * Terminate the internal animation timer of the component so that the JVM can terminate.
-     */
-    public void terminate() {
-        t.stop(); // stop the timer in the end
-        System.out.println("Game of Life timer terminated");
-    }
-    
-    private class MyActionListener implements ActionListener {
-        public void actionPerformed(ActionEvent ae) {
-            for(int x = 0; x < size; ++x) {
-                for(int y = 0; y < size; ++y) {
-                    int sum = 0; // count the number of live variables into variable sum
-                    if(x > 0) { // look at the three cells above the cell (x,y)
-                        if(y > 0 && board[x-1][y-1]) ++sum;
-                        if(board[x-1][y]) ++sum;
-                        if(y < size-1 && board[x-1][y+1]) ++sum;
-                    }
-                    if(x < size-1) { // look at the three cells below the cell (x,y)
-                        if(y > 0 && board[x+1][y-1]) ++sum;
-                        if(board[x+1][y]) ++sum;
-                        if(y < size-1 && board[x+1][y+1]) ++sum;
-                    }
-                    if(y > 0 && board[x][y-1]) ++sum; // look at the cell to the left
-                    if(y < size-1 && board[x][y+1]) ++sum; //  look at the cell to the right
-                    
-                    // the cell (x,y) is alive at next board if either
-                    // (1) it is alive now, and its neighbour count is among the survivals
-                    // (2) is is dead now, and its neighbour count is among the births
-                    newBoard[x][y] =
-                      (board[x][y] && survival.indexOf('0' + sum) > -1) ||
-                      (!board[x][y] && birth.indexOf('0' + sum) > -1);
-                      
-                    // set the pixel of the image according to the new state of cell
-                    for(int px = 0; px < PIXSIZE; px++) {
-                        for(int py = 0; py < PIXSIZE; py++) {
-                            img.setRGB(x * PIXSIZE + px, y * PIXSIZE + py,
-                            newBoard[x][y] ? aliveColour: deadColour);
-                        }
-                    }
-                    
-                }
-            }
-            boolean[][] tmp = board; // swap the references to the two board arrays
-            board = newBoard;
-            newBoard = tmp;
-            repaint();
-        }
+    public GameOfLife(int size) {
+        this(size, Rule.of("3", "23"), 0.30);
     }
 
     /**
-     * Render this component as it currently looks like.
-     * @param g The {@code Graphics} object provided by Swing for us to draw on.
+     * Constructor for generalized Life-like cellular automata.
+     *
+     * @param size the side length of the square grid, in cells
+     * @param rule the birth/survival rule
+     * @param prob probability that each interior cell is initially alive
      */
-    public void paintComponent(Graphics g) {
+    public GameOfLife(int size, Rule rule, double prob) {
+        this.size = size;
+        this.rule = rule;
+
+        int pix = size * PIX_SIZE;
+        this.img = new BufferedImage(pix, pix, BufferedImage.TYPE_INT_RGB);
+        setPreferredSize(new Dimension(pix, pix));
+        setBorder(BorderFactory.createRaisedBevelBorder());
+        setBackground(new Color(deadRGB));
+
+        board = new boolean[size][size];
+        nextBoard = new boolean[size][size];
+        for (int x = MARGIN; x < size - MARGIN; x++) {
+            for (int y = MARGIN; y < size - MARGIN; y++) {
+                board[x][y] = RNG.nextDouble() < prob;
+            }
+        }
+
+        // Tick every 500 ms; stagger initial delay to avoid lockstep.
+        timer = new Timer(500, _ -> advance());
+        timer.setInitialDelay(RNG.nextInt(500));
+        timer.start();
+    }
+
+    /** Stop the internal animation timer so that the JVM can exit. */
+    public void terminate() {
+        timer.stop();
+        System.out.println("Game of Life timer terminated");
+    }
+
+    // --- Simulation step ---
+
+    private int countNeighbours(int x, int y) {
+        int count = 0;
+        for (var offset : NEIGHBOUR_OFFSETS) {
+            int nx = x + offset[0];
+            int ny = y + offset[1];
+            if (nx >= 0 && nx < size && ny >= 0 && ny < size && board[nx][ny]) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void advance() {
+        for (int x = 0; x < size; x++) {
+            for (int y = 0; y < size; y++) {
+                int neighbours = countNeighbours(x, y);
+                nextBoard[x][y] = rule.shouldLive(board[x][y], neighbours);
+                int rgb = nextBoard[x][y] ? aliveRGB : deadRGB;
+                for (int px = 0; px < PIX_SIZE; px++) {
+                    for (int py = 0; py < PIX_SIZE; py++) {
+                        img.setRGB(x * PIX_SIZE + px, y * PIX_SIZE + py, rgb);
+                    }
+                }
+            }
+        }
+        // Swap board references for the next generation.
+        var tmp = board;
+        board = nextBoard;
+        nextBoard = tmp;
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.drawImage(img, 0, 0, this);
     }
-    
-    private static final int SIZE = 150;
-    private static int idx = 0;
-    
-    /**
-     * A utility method to create a {@code JFrame} instance to display the game.
-     * @param title The title of the frame.
-     * @param g The {@code GameOfLife} instance to display in this frame.
-     */
-    public static void createFrame(String title, final GameOfLife g, int x, int y) {
-        final JFrame f = new JFrame(title);
-        f.add(g);
-        f.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent we) {
-                g.terminate(); // first kill the timer of the GameOfLife component
-                f.dispose(); // and now we can safely dispose of the frame
+
+    // --- Frame factory ---
+
+    private static void createFrame(Variant variant, GameOfLife game) {
+        var frame = new JFrame(variant.title());
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                game.terminate();
             }
         });
-        f.pack();
-        int p = PIXSIZE * SIZE - 100;
-        f.setLocation(x, y);
-        ++idx;
-        f.setVisible(true);
+        frame.add(game);
+        frame.pack();
+        frame.setLocation(variant.windowX(), variant.windowY());
+        frame.setVisible(true);
     }
-    
+
+    // --- Entry point ---
+
+    private static final int SIZE = 150;
+
     public static void main(String[] args) {
-        // "Three or more, use a for!"
-        createFrame("Conway's Game of Life", new GameOfLife(SIZE, "3", "23", 0.20), 100, 100);
-        createFrame("Day & Night", new GameOfLife(SIZE, "3678", "34678", 0.40), 100, 600);
-        createFrame("Mazectric", new GameOfLife(SIZE, "3", "1234", 0.05), 600, 100);
-        // The survival of diamoeba depends greatly on initial filling probability.
-        createFrame("Diamoeba", new GameOfLife(SIZE, "35678", "5678", 0.50), 600, 600);
-        createFrame("Serviettes", new GameOfLife(SIZE, "234", "", 0.03), 1100, 100);
-        createFrame("Gnarl", new GameOfLife(SIZE, "1", "1", 0.01), 1100, 600);
-        // Plenty more available at http://www.mirekw.com/ca/rullex_life.html
+        var variants = java.util.List.of(
+                new Variant("Conway's Game of Life", Rule.of("3", "23"),     0.20, 100,  100),
+                new Variant("Day & Night",           Rule.of("3678", "34678"), 0.40, 100,  600),
+                new Variant("Mazectric",             Rule.of("3", "1234"),   0.05, 600,  100),
+                new Variant("Diamoeba",              Rule.of("35678", "5678"), 0.50, 600,  600),
+                new Variant("Serviettes",            Rule.of("234", ""),     0.03, 1100, 100),
+                new Variant("Gnarl",                 Rule.of("1", "1"),      0.01, 1100, 600)
+        );
+
+        SwingUtilities.invokeLater(() -> {
+            for (var variant : variants) {
+                var game = new GameOfLife(SIZE, variant.rule(), variant.fillProbability());
+                createFrame(variant, game);
+            }
+        });
     }
 }

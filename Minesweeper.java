@@ -1,5 +1,3 @@
-import javax.swing.JFrame;
-import javax.swing.JPanel;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -11,200 +9,275 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
-import java.util.Random;
+import java.util.random.RandomGenerator;
+import java.util.stream.IntStream;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 /**
  * A Java implementation of the classic Minesweeper game of Microsoft Windows.
+ * Modernized for Java 21+ with records, sealed types, switch expressions,
+ * pattern matching, and contemporary idioms.
+ *
  * @author Ilkka Kokkarinen
  */
-
 public class Minesweeper extends JPanel {
 
-    private final int gridWidth;
-    private final int gridHeight; // Game board width and height in tiles
-    private final double prob; // Probability that a tile becomes a mine
-    private boolean gameOn; // Is the game on?
-    private boolean first; // Is the player opening the first tile?
-    private boolean[][] isMine, isOpen, isMarked; // State of the gameboard
-    private int[][] value; // Precomputed numerical values to show
-    private final Random rng = new Random();
+    // --- Coordinate record and neighbour enumeration ---
 
-    private static final int TILESIZE = 30;
-    private static final int XOFFSET = 10;
-    private static final int YOFFSET = 10;
-    private static final int NOFF = TILESIZE / 2 - 4;
-    private static final Font font = new Font("Code2000", Font.BOLD, 12);
+    /** A position on the grid, with utility methods for bounds and neighbours. */
+    record Pos(int x, int y) {
+
+        boolean inBounds(int w, int h) {
+            return x >= 0 && x < w && y >= 0 && y < h;
+        }
+
+        private static final int[][] OFFSETS = {
+                {-1, -1}, {-1, 0}, {-1, 1},
+                { 0, -1},          { 0, 1},
+                { 1, -1}, { 1, 0}, { 1, 1}
+        };
+
+        /** The (up to) eight neighbours of this position within the given bounds. */
+        java.util.List<Pos> neighbours(int w, int h) {
+            return java.util.Arrays.stream(OFFSETS)
+                    .map(off -> new Pos(x + off[0], y + off[1]))
+                    .filter(p -> p.inBounds(w, h))
+                    .toList();
+        }
+    }
+
+    // --- Tile state as a sealed hierarchy ---
+
+    /** The visual/logical state of a single tile. */
+    sealed interface TileState {
+        record Closed()  implements TileState { }
+        record Marked()  implements TileState { }
+        record Opened()  implements TileState { }
+    }
+
+    private static final TileState CLOSED = new TileState.Closed();
+    private static final TileState MARKED = new TileState.Marked();
+    private static final TileState OPENED = new TileState.Opened();
+
+    // --- Layout constants ---
+
+    private static final int TILE_SIZE = 30;
+    private static final int X_OFFSET = 10;
+    private static final int Y_OFFSET = 10;
+    private static final int NUM_OFFSET = TILE_SIZE / 2 - 4;
+    private static final Font TILE_FONT = new Font("Code2000", Font.BOLD, 12);
+    private static final BasicStroke TILE_STROKE = new BasicStroke(2.0f);
+
+    // --- Instance state ---
+
+    private final int gridWidth;
+    private final int gridHeight;
+    private final double prob;
+    private final RandomGenerator rng = RandomGenerator.getDefault();
+
+    private boolean gameOn;
+    private boolean firstClick;
+    private boolean[][] mines;
+    private TileState[][] state;
+    private int[][] value; // precomputed neighbour mine counts
 
     /**
      * Construct a new Minesweeper panel of given size.
-     * @param w The width of the gamefield, measured in tiles.
-     * @param h The height of the gamefields, measured in tiles.
-     * @param prob The probability of a tile initially containing a mine, from range 0 to 100.
+     *
+     * @param w    the width of the game field, in tiles
+     * @param h    the height of the game field, in tiles
+     * @param prob the probability of a tile containing a mine (0.0–1.0)
      */
     public Minesweeper(int w, int h, double prob) {
-        this.setBackground(Color.GRAY);
-        this.setPreferredSize(new Dimension(2 * XOFFSET + w * TILESIZE, 2 * YOFFSET + h * TILESIZE));
         this.gridWidth = w;
         this.gridHeight = h;
         this.prob = prob;
-        this.addMouseListener(new MineListener());
+        setBackground(Color.GRAY);
+        setPreferredSize(new Dimension(
+                2 * X_OFFSET + w * TILE_SIZE,
+                2 * Y_OFFSET + h * TILE_SIZE
+        ));
+        addMouseListener(new MineListener());
         startNewGame();
     }
 
-    // Count how many neighbours of tile (x, y) are true in the data array.
-    private int countNeighbours(boolean[][] data, int x, int y) {
-        int sum = 0;
-        if(x > 0) {
-            if(y > 0 && data[x-1][y-1]) ++sum;
-            if(data[x-1][y]) ++sum;
-            if(y < gridHeight-1 && data[x-1][y+1]) ++sum;
-        }
-        if(x < gridWidth-1) { 
-            if(y > 0 && data[x+1][y-1]) ++sum;
-            if(data[x+1][y]) ++sum;
-            if(y < gridHeight-1 && data[x+1][y+1]) ++sum;
-        }
-        if(y > 0 && data[x][y-1]) ++sum; 
-        if(y < gridHeight-1 && data[x][y+1]) ++sum;
-        return sum;
-    }
-    
-    /**
-     * Initialize a new game with each tile initially closed. The mines will not be
-     * planted on the field until the first tile opening click done by the player.
-     */
+    // --- Game lifecycle ---
+
     private void startNewGame() {
         gameOn = true;
-        first = true;
-        isMine = new boolean[gridWidth][gridHeight];
-        isOpen = new boolean[gridWidth][gridHeight];
-        isMarked = new boolean[gridWidth][gridHeight];
+        firstClick = true;
+        mines = new boolean[gridWidth][gridHeight];
+        state = new TileState[gridWidth][gridHeight];
         value = new int[gridWidth][gridHeight];
-        this.repaint();
-    }
-    
-    // Each tile becomes a mine with the given probability, independent of other tiles.
-    private void seedMines(int sx, int sy) {
-        for(int x = 0; x < gridWidth; x++) {
-            for(int y = 0; y < gridHeight; y++) {
-                isMine[x][y] = ((Math.abs(x-sx) + Math.abs(y-sy) > 2) && rng.nextDouble() < prob);
-            }
-        }        
-        for(int x = 0; x < gridWidth; x++) {
-            for(int y = 0; y < gridHeight; y++) {
-                value[x][y] = countNeighbours(isMine, x, y);
-            }
-        } 
+        for (var row : state) { java.util.Arrays.fill(row, CLOSED); }
+        repaint();
     }
 
     /**
-     * Render this component as it currently looks like.
-     * @param g The {@code Graphics} object provided by Swing for us to draw on.
+     * Plant the mines after the first click, keeping a Manhattan-distance
+     * safe zone of radius 2 around the clicked position.
      */
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D)g; // convert to better Graphics2D
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON); // looks nicer
-
-        g2.setFont(font);
-        g2.setStroke(new BasicStroke(2.0f));
-        for(int x = 0; x < gridWidth; x++) {
-            for(int y = 0; y < gridHeight; y++) {
-                int bx = XOFFSET + TILESIZE * x;
-                int by = YOFFSET + TILESIZE * (y + 1);
-                if(isOpen[x][y]) {
-                    if(isMine[x][y]) {
-                        g2.drawString("M", bx + NOFF, by - NOFF); 
-                    }
-                    else if(value[x][y] > 0) {
-                        g2.drawString("" + value[x][y], bx + NOFF, by - NOFF); 
-                    }
-                }
-                else {
-                    RoundRectangle2D.Double rect = new RoundRectangle2D.Double(
-                        bx + 2, by - TILESIZE + 2, TILESIZE - 4, TILESIZE - 4, 5, 5
-                    ); 
-                    g2.setPaint(isMarked[x][y]? Color.RED: Color.GREEN);
-                    g2.fill(rect);
-                    g2.setPaint(Color.BLACK);
-                    g2.draw(rect);
-                }
+    private void seedMines(Pos start) {
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                boolean safeZone = Math.abs(x - start.x()) + Math.abs(y - start.y()) <= 2;
+                mines[x][y] = !safeZone && rng.nextDouble() < prob;
+            }
+        }
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                var pos = new Pos(x, y);
+                value[x][y] = (int) pos.neighbours(gridWidth, gridHeight).stream()
+                        .filter(p -> mines[p.x()][p.y()])
+                        .count();
             }
         }
     }
 
-    private class MineListener extends MouseAdapter {            
-        @Override public void mousePressed(MouseEvent me) {
-            if(!gameOn) { startNewGame(); return; }
-            int x = (me.getX() - XOFFSET) / TILESIZE;
-            int y = (me.getY() - YOFFSET) / TILESIZE;
-            if(me.getButton() == MouseEvent.BUTTON1) {
-                if(openTile(x, y, false)) {
-                    hitMine();
-                }
-            }
-            else {
-                if(!isOpen[x][y]) { isMarked[x][y] = !isMarked[x][y]; }
-            }
-            for(x = 0; x < gridWidth; x++) {
-                for(y = 0; y < gridHeight; y++) {
-                    if(isOpen[x][y] && value[x][y] == countNeighbours(isMarked, x, y)) {
-                        if(openTile(x, y, true)) { hitMine(); }
-                    }
-                }
-            }
-            repaint();
-        }        
-        // The other four MouseListener methods are inherited from MouseAdapter.
+    private int countMarkedNeighbours(Pos pos) {
+        return (int) pos.neighbours(gridWidth, gridHeight).stream()
+                .filter(p -> state[p.x()][p.y()] instanceof TileState.Marked)
+                .count();
     }
 
-    // Open the tile (x, y). If neighbours is true, do not open but check whether
-    // some tiles can be safely opened. Returns true if hit a mine, false if not.
-    private boolean openTile(int x, int y, boolean neighbours) {
-        if(x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) {
-            return false; // out of bounds, do nothing
-        }
-        if(!neighbours) {
-            if(isOpen[x][y] || isMarked[x][y]) { return false; }
-            if(first) {
-                first = false;
-                seedMines(x, y);
+    // --- Tile opening logic ---
+
+    /**
+     * Open the tile at the given position. Returns {@code true} if a mine
+     * was hit. When {@code cascadeOnly} is true, only the neighbours are
+     * cascade-opened (used for chord clicks on satisfied numbers).
+     */
+    private boolean openTile(Pos pos, boolean cascadeOnly) {
+        if (!pos.inBounds(gridWidth, gridHeight)) { return false; }
+        if (!cascadeOnly) {
+            // Already open or flagged — nothing to do.
+            if (!(state[pos.x()][pos.y()] instanceof TileState.Closed)) { return false; }
+            if (firstClick) {
+                firstClick = false;
+                seedMines(pos);
             }
-            isOpen[x][y] = true;
-            if(isMine[x][y]) { return true; }
+            state[pos.x()][pos.y()] = OPENED;
+            if (mines[pos.x()][pos.y()]) { return true; }
         }
-        // Generalization of the zero cell opening makes the game more fun
-        boolean result = false;
-        if(value[x][y] == countNeighbours(isMarked, x, y)) {
-            result = openTile(x - 1, y - 1, false);
-            result |= openTile(x-1, y, false);
-            result |= openTile(x-1, y+1, false);
-            result |= openTile(x+1, y-1, false);
-            result |= openTile(x+1, y, false);
-            result |= openTile(x+1, y+1, false);
-            result |= openTile(x, y-1, false);
-            result |= openTile(x, y+1, false);            
+        // Cascade: if the count matches the number of marked neighbours,
+        // recursively open all unmarked neighbours.
+        if (value[pos.x()][pos.y()] == countMarkedNeighbours(pos)) {
+            boolean hitMine = false;
+            for (var neighbour : pos.neighbours(gridWidth, gridHeight)) {
+                hitMine |= openTile(neighbour, false);
+            }
+            return hitMine;
         }
-        return result;
+        return false;
     }
 
-    private void hitMine() {
+    private void revealAll() {
         gameOn = false;
-        for(int x = 0; x < gridWidth; x++) {
-            for(int y = 0; y < gridHeight; y++) {
-                isOpen[x][y] = true;
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                state[x][y] = OPENED;
             }
         }
         repaint();
     }
-    
+
+    // --- Mouse handling ---
+
+    private class MineListener extends MouseAdapter {
+        @Override
+        public void mousePressed(MouseEvent me) {
+            if (!gameOn) { startNewGame(); return; }
+            var pos = new Pos(
+                    (me.getX() - X_OFFSET) / TILE_SIZE,
+                    (me.getY() - Y_OFFSET) / TILE_SIZE
+            );
+            if (!pos.inBounds(gridWidth, gridHeight)) { return; }
+
+            boolean hitMine = switch (me.getButton()) {
+                case MouseEvent.BUTTON1 -> openTile(pos, false);
+                default -> {
+                    // Right click (or middle): toggle flag.
+                    if (state[pos.x()][pos.y()] instanceof TileState.Closed) {
+                        state[pos.x()][pos.y()] = MARKED;
+                    } else if (state[pos.x()][pos.y()] instanceof TileState.Marked) {
+                        state[pos.x()][pos.y()] = CLOSED;
+                    }
+                    yield false;
+                }
+            };
+
+            // Chord-open: any open tile whose count matches its marked
+            // neighbours can have its remaining neighbours auto-opened.
+            if (!hitMine) {
+                for (int x = 0; x < gridWidth; x++) {
+                    for (int y = 0; y < gridHeight; y++) {
+                        if (state[x][y] instanceof TileState.Opened) {
+                            var p = new Pos(x, y);
+                            if (value[x][y] == countMarkedNeighbours(p)) {
+                                hitMine |= openTile(p, true);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (hitMine) { revealAll(); } else { repaint(); }
+        }
+    }
+
+    // --- Rendering ---
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        var g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setFont(TILE_FONT);
+        g2.setStroke(TILE_STROKE);
+
+        for (int x = 0; x < gridWidth; x++) {
+            for (int y = 0; y < gridHeight; y++) {
+                int bx = X_OFFSET + TILE_SIZE * x;
+                int by = Y_OFFSET + TILE_SIZE * (y + 1);
+
+                switch (state[x][y]) {
+                    case TileState.Opened _ -> {
+                        if (mines[x][y]) {
+                            g2.drawString("M", bx + NUM_OFFSET, by - NUM_OFFSET);
+                        } else if (value[x][y] > 0) {
+                            g2.drawString(String.valueOf(value[x][y]),
+                                    bx + NUM_OFFSET, by - NUM_OFFSET);
+                        }
+                    }
+                    case TileState.Closed _, TileState.Marked _ -> {
+                        var rect = new RoundRectangle2D.Double(
+                                bx + 2, by - TILE_SIZE + 2,
+                                TILE_SIZE - 4, TILE_SIZE - 4, 5, 5
+                        );
+                        g2.setPaint(state[x][y] instanceof TileState.Marked
+                                ? Color.RED : Color.GREEN);
+                        g2.fill(rect);
+                        g2.setPaint(Color.BLACK);
+                        g2.draw(rect);
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Entry point ---
+
     public static void main(String[] args) {
-        JFrame f = new JFrame("Minesweeper");
-        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        f.setLayout(new FlowLayout());
-        f.add(new Minesweeper(35, 20, .23));
-        f.pack();
-        f.setVisible(true);        
+        SwingUtilities.invokeLater(() -> {
+            var frame = new JFrame("Minesweeper");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.setLayout(new FlowLayout());
+            frame.add(new Minesweeper(35, 20, 0.23));
+            frame.pack();
+            frame.setVisible(true);
+        });
     }
 }

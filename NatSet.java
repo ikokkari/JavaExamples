@@ -1,99 +1,137 @@
-import java.util.*;
+import java.util.BitSet;
 
-// A monotonic set of natural numbers ideal for situations where these
-// numbers tend to be encountered in roughly ascending order, but not
-// strictly so. Many recursive sequences work this way.
-
+/**
+ * A monotonic set of natural numbers ideal for situations where these
+ * numbers tend to be encountered in roughly ascending order, but not
+ * strictly so. Many recursive sequences work this way.
+ *
+ * <p>Modernized for Java 21+: the underlying storage is a {@link BitSet}
+ * (1 bit per element) instead of a {@code boolean[]} (1 byte per element),
+ * giving an immediate 8× memory improvement. The sliding-window compaction
+ * strategy is preserved but operates on the {@code BitSet} via bulk
+ * {@code get(fromIndex, toIndex)} sub-range extraction.
+ *
+ * @author Ilkka Kokkarinen
+ */
 public class NatSet {
 
-    // Initial size of the boolean[] used to store membership info.
-    private static final int PAGE = 1000;
-    // For statistics of how often these optimizations help us.
-    private long shiftCount = 0;
-    public long getShiftCount() { return shiftCount; }
-    
-    // The set contains all natural numbers that are less than start.
+    /** Initial capacity of the sliding window, in bits. */
+    private static final int PAGE = 1024; // a round power of two suits BitSet well
+
+    // --- Sliding window state ---
+
+    /** The set implicitly contains all natural numbers less than {@code start}. */
     private long start = 0;
-    // Array to keep track of set membership for elements i that satisfy
-    // start <= i < start + n, where n is the current length of the data array.
-    private boolean[] data;
-    // Inside the data array, every position < pos contains the value true.
+
+    /**
+     * Membership data for elements {@code n} satisfying
+     * {@code start <= n < start + capacity}. Bit {@code (n - start)}
+     * is set iff {@code n} has been added.
+     */
+    private BitSet data;
+
+    /** Current allocated capacity of the window (in bits). */
+    private int capacity;
+
+    /**
+     * All bits in {@code data} with index strictly less than {@code pos}
+     * are known to be set. This is the sweep cursor for the compaction check.
+     */
     private int pos = 0;
-    // We might as well allow the outside code become aware of this fact.
+
+    // --- Statistics ---
+
+    private long shiftCount = 0;
+
+    public long getShiftCount() { return shiftCount; }
+
+    /**
+     * Every natural number strictly less than this value is a member.
+     * Useful for callers who want to exploit the monotonic property.
+     */
     public long allTrueUpTo() { return start + pos; }
-    
+
     public NatSet() {
-        data = new boolean[PAGE];
+        capacity = PAGE;
+        data = new BitSet(capacity);
     }
-    
+
+    /**
+     * Add the natural number {@code n} to the set. If {@code n} is
+     * already implicitly contained (i.e. less than {@code start}),
+     * this is a no-op.
+     *
+     * @param n the natural number to add
+     */
     public void add(long n) {
-        if(n >= start) {
-            // Determine the need for expanding the data array.
-            int newSize = data.length;
-            while(n >= start + newSize) {
-                // Grow the data array exponentially, but modestly.
-                newSize += data.length / 4;
+        if (n < start) { return; } // already implicitly a member
+
+        // Grow the window capacity if needed.
+        int index = (int) (n - start);
+        if (index >= capacity) {
+            // Grow modestly but at least enough.
+            while (index >= capacity) {
+                capacity += capacity / 4;
             }
-            // If n is past the end of data array, expand data array.
-            if(newSize > data.length) {
-                data = Arrays.copyOf(data, newSize);
-            }
-            // Update the element in the data array.
-            data[(int)(n - start)] = true;
-            // Update the pos counter sweeping through the data array.
-            while(pos < data.length && data[pos]) { pos++; }
-            // Once the first quarter of elements are true, shift the sliding window.
-            if(pos > data.length / 4) {
-                // Update the shifting statistics.
-                shiftCount += pos;
-                // Copy the rest of the array to start from the beginning.
-                if (data.length - pos >= 0) {
-                    System.arraycopy(data, pos, data, 0, data.length - pos);
-                }
-                // Update the position of the sliding window.
-                start += pos;
-                // Fill the portion of data array with false values again.
-                Arrays.fill(data, data.length - pos, data.length, false);
-                // And start sweeping the data array from the beginning again.
-                pos = 0;
-            }            
+            // BitSet grows automatically on set(), but we track capacity
+            // ourselves for the compaction threshold calculation.
         }
-        // No else here, since adding an element < start changes nothing.
+
+        data.set(index);
+
+        // The first clear bit can only advance when we fill the exact
+        // gap at pos. In all other cases, pos is unchanged.
+        if (index == pos) {
+            pos = data.nextClearBit(pos);
+        }
+
+        // Once the first quarter of the window is all-true, compact.
+        if (pos > capacity / 4) {
+            shiftCount += pos;
+            // Shift the window: extract the sub-range [pos, capacity) as
+            // a new BitSet, then update bookkeeping.
+            data = data.get(pos, Math.max(pos, data.length()));
+            start += pos;
+            capacity -= pos;
+            // Ensure capacity doesn't shrink below PAGE.
+            if (capacity < PAGE) { capacity = PAGE; }
+            pos = 0;
+        }
     }
-    
+
+    /**
+     * Test whether the natural number {@code n} is a member of the set.
+     *
+     * @param n the natural number to query
+     * @return {@code true} if {@code n} is in the set
+     */
     public boolean contains(long n) {
-        // Everything to the left of the sliding window is member.
-        if(n < start) { return true; }
-        // Everything to the right of the sliding window is a nonmember.
-        if(n >= start + data.length) { return false; }
-        // Inside the sliding window, consult the data array to get the answer.
-        return data[(int)(n - start)];
+        if (n < start) { return true; }             // left of window: implicit member
+        int index = (int) (n - start);
+        if (index >= capacity) { return false; }     // right of window: not yet added
+        return data.get(index);
     }
-    
-    public static void demo() {
-        // Demonstration of the principle of "tortoise and hare" where two
-        // position indices advance the exact same path, except that hare makes
-        // two moves for every one move of tortoise. Two identical RNG's are
-        // used to generate the same steps for both. The hare adds the elements
-        // it steps to into the set, whereas tortoise adds every element to
-        // the set as it verifies that only those elements that hare also jumped
-        // into were members of the set.
-        NatSet s = new NatSet();
-        // Use two identical RNG's to generate the steps for tortoise and hare.
-        Random rng1 = new Random(123);
-        Random rng2 = new Random(123);
-        int t = 0, h = 0; // Positions of tortoise and hare.
-        // You can try on your computer how high you can make i go before
-        // running out of heap memory needed by the data array.
-        for(int i = 0; i < 100_000_000; i++) {
-            // Hare moves in every round.
-            h += rng1.nextInt(10) + 1;
+
+    // --- Demo: tortoise and hare verification ---
+
+    public static void main(String[] args) {
+        // Demonstration of the "tortoise and hare" principle where two
+        // position indices advance the exact same path, except that hare
+        // makes two moves for every one move of tortoise. Two identical
+        // RNGs generate the same steps for both. The hare adds elements
+        // as it goes; the tortoise verifies membership and fills gaps.
+        var s = new NatSet();
+        var hareRng = new java.util.SplittableRandom(123);
+        var tortoiseRng = new java.util.SplittableRandom(123);
+
+        long t = 0, h = 0;
+        for (int i = 0; i < 100_000_000; i++) {
+            h += hareRng.nextInt(1, 11);  // 1..10 inclusive
             s.add(h);
-            // Tortoise moves in every other round. 
-            if(i % 2 == 1) {
-                int next = t + rng2.nextInt(10) + 1;
+            if (i % 2 == 1) {
+                long next = t + tortoiseRng.nextInt(1, 11);
                 t++;
-                while(t < next) {
+                while (t < next) {
                     assert !s.contains(t) : t + " should not be in the set";
                     s.add(t);
                     t++;
@@ -102,5 +140,6 @@ public class NatSet {
             }
         }
         System.out.println("Ended with hare at " + h + " and tortoise at " + t);
+        System.out.println("Shift count: " + s.getShiftCount());
     }
 }
