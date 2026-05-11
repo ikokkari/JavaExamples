@@ -3,124 +3,194 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.SwingUtilities;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Graphics;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 /**
- * A Swing component to display one-dimensional cellular automata, with
- * time flowing in the vertical direction, as is customary in this genre.
+ * A Swing component that displays one-dimensional elementary cellular
+ * automata with time flowing downward, as is customary in this genre.
+ * <p>
+ * The 256 possible rules are selected with a slider (Wolfram numbering),
+ * and a checkbox toggles the Fredkin XOR variant, which XORs each cell
+ * with its state from two generations ago — producing self-similar fractal
+ * patterns from many otherwise "boring" rules.
+ * <p>
+ * Each cell's next state is determined by its own state and those of its
+ * two neighbours in the previous generation. The three-bit neighbourhood
+ * encodes to a number 0–7, and the corresponding bit of the rule number
+ * gives the output. The grid wraps horizontally (toroidal boundary).
+ *
+ * @see <a href="https://en.wikipedia.org/wiki/Elementary_cellular_automaton">
+ *      Wikipedia: Elementary Cellular Automaton</a>
  * @author Ilkka Kokkarinen
  */
-
 public class ElementaryCellular extends JPanel {
 
-    private static final int TOP = 35;
-    private final boolean[][] state;
-    
-    // All sorts of Swing components with different listeners.
-    private final JSlider ruleSlider;
-    private final JCheckBox fredkinBox;
-    private final JLabel ruleLabel;
-    
+    private static final int CELL_SIZE = 2;  // pixels per cell
+    private static final Color ALIVE = Color.BLACK;
+    private static final Color DEAD = Color.WHITE;
+
+    private final int cols;
+    private final int rows;
+    private final boolean[][] grid;    // grid[x][y]
+    private final BufferedImage image;
+
     private int rule = 110;
-    private final BufferedImage img;
-    
-    // Compute the value of the cell (x,y) based on its ancestors.
-    private boolean evaluateCell(int x, int y, boolean fredkin) {
-        int v = 0;
-        int len = state.length;
-        v += state[(x + len - 1) % len][y-1] ? 4: 0;
-        v += state[x][y-1] ? 2: 0;
-        v += state[(x + 1) % len][y-1] ? 1: 0;
-        boolean v1 = (rule & (1 << v)) != 0;        
-        if(fredkin) { // Fredkin rule
-            boolean v2 = (y > 1 && state[x][y-2]);
-            return (v1 || v2) && !(v1 && v2); // xor
-        }
-        else { // Wolfram rule
-            return v1;
-        }
-    }
-    
+    private final JLabel ruleLabel = new JLabel(formatRule(rule));
+    private final JCheckBox fredkinBox = new JCheckBox("Fredkin XOR");
+
+    // -----------------------------------------------------------------------
+    // Construction
+    // -----------------------------------------------------------------------
+
     /**
-     * Compute the state of the entire board, given the first row.
+     * Create a cellular automaton display with the given grid dimensions.
+     * The initial configuration is a single live cell at the top centre.
+     *
+     * @param cols number of cells across
+     * @param rows number of generations (rows) to display
      */
-    public void evaluateBoard() {
-        boolean fredkin = fredkinBox.isSelected();
-        for(int y = 0; y < state[0].length; y++) {
-            for(int x = 0; x < state.length; x++) {
-               state[x][y] = y > 0 ? evaluateCell(x, y, fredkin) : state[x][y];
-               int col = state[x][y] ? 0 : 0x00FFFFFF;
-               int xx = 2 * x, yy = 2 * y;
-               img.setRGB(xx, yy, col);
-               img.setRGB(xx + 1, yy, col);
-               img.setRGB(xx, yy + 1, col);
-               img.setRGB(xx + 1, yy + 1, col);
+    public ElementaryCellular(int cols, int rows) {
+        this.cols = cols;
+        this.rows = rows;
+        this.grid = new boolean[cols][rows];
+        this.image = new BufferedImage(
+                cols * CELL_SIZE, rows * CELL_SIZE,
+                BufferedImage.TYPE_INT_RGB);
+
+        grid[cols / 2][0] = true;  // seed: single cell at top centre
+
+        setLayout(new BorderLayout());
+        add(buildControlPanel(), BorderLayout.NORTH);
+
+        recomputeAndRepaint();
+    }
+
+    private JPanel buildControlPanel() {
+        var slider = new JSlider(0, 255, rule);
+        slider.setMajorTickSpacing(50);
+        slider.setPaintTicks(true);
+
+        // Lambdas instead of named inner listener classes.
+        slider.addChangeListener(_ -> {
+            rule = slider.getValue();
+            ruleLabel.setText(formatRule(rule));
+            recomputeAndRepaint();
+        });
+        fredkinBox.addItemListener(_ -> recomputeAndRepaint());
+
+        var controls = new JPanel();
+        controls.setLayout(new BoxLayout(controls, BoxLayout.LINE_AXIS));
+        controls.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+        controls.add(new JLabel("Rule: "));
+        controls.add(ruleLabel);
+        controls.add(Box.createHorizontalStrut(8));
+        controls.add(slider);
+        controls.add(Box.createHorizontalStrut(12));
+        controls.add(fredkinBox);
+        return controls;
+    }
+
+    private static String formatRule(int rule) {
+        // Show both decimal and binary so students see which bits are set.
+        return "%d (%s)".formatted(rule, 
+                String.format("%8s", Integer.toBinaryString(rule))
+                      .replace(' ', '0'));
+    }
+
+    // -----------------------------------------------------------------------
+    // Cellular automaton logic
+    // -----------------------------------------------------------------------
+
+    /**
+     * Evaluate cell (x, y) from its row-(y−1) neighbourhood.
+     * The three-bit neighbourhood [left, centre, right] is read as
+     * a number 0–7, and the corresponding bit of {@code rule} gives
+     * the Wolfram output. If the Fredkin variant is enabled, the result
+     * is XORed with the cell's state two generations ago.
+     */
+    private boolean evaluateCell(int x, int y) {
+        int neighbourhood =
+                (grid[(x + cols - 1) % cols][y - 1] ? 4 : 0)
+              | (grid[x][y - 1]                     ? 2 : 0)
+              | (grid[(x + 1) % cols][y - 1]        ? 1 : 0);
+        boolean wolfram = (rule & (1 << neighbourhood)) != 0;
+        if (fredkinBox.isSelected() && y > 1) {
+            return wolfram ^ grid[x][y - 2];
+        }
+        return wolfram;
+    }
+
+    /**
+     * Recompute the entire grid from the seed row and render it
+     * into the offscreen image.
+     */
+    private void recomputeAndRepaint() {
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                if (y > 0) {
+                    grid[x][y] = evaluateCell(x, y);
+                }
+                // Paint the cell into the image.
+                int rgb = grid[x][y] ? ALIVE.getRGB() : DEAD.getRGB();
+                int px = x * CELL_SIZE;
+                int py = y * CELL_SIZE;
+                for (int dy = 0; dy < CELL_SIZE; dy++) {
+                    for (int dx = 0; dx < CELL_SIZE; dx++) {
+                        image.setRGB(px + dx, py + dy, rgb);
+                    }
+                }
             }
         }
         repaint();
     }
-    
-    /**
-     * The constructor for desired width and height.
-     * @param width The width of the computed image, in pixels.
-     * @param height, The height of the computed image, in pixels.
-     */
-    public ElementaryCellular(int width, int height) {
-        this.setPreferredSize(new Dimension(2 * width, 2 * height + TOP));
-        img = new BufferedImage(2 * width, 2 * height, BufferedImage.TYPE_INT_BGR);
-        
-        fredkinBox = new JCheckBox("Fredkin");
-        this.add(fredkinBox);
-        fredkinBox.addItemListener(new MyFredkinListener());
-        this.add(new JLabel("Rule:"));
-        ruleLabel = new JLabel(rule + "");
-        this.add(ruleLabel);
-        ruleSlider = new JSlider(0, 255);
-        this.add(ruleSlider);
-        ruleSlider.addChangeListener(new MySliderListener());
-        
-        state = new boolean[width][height];
-        state[width / 2][0] = true;
-        evaluateBoard();
+
+    // -----------------------------------------------------------------------
+    // Rendering
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Dimension getPreferredSize() {
+        // Let the layout manager know how big we'd like to be.
+        int controlHeight = 40; // approximate height of control panel
+        return new Dimension(
+                cols * CELL_SIZE,
+                rows * CELL_SIZE + controlHeight);
     }
-    
-    /**
-     * Render this component as it currently looks like.
-     * @param g The {@code Graphics} object provided by Swing for us to draw on.
-     */
-    public void paintComponent(Graphics g) {
+
+    @Override
+    protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(img, 0, TOP, this);
+        var g2 = (Graphics2D) g;
+        g2.setRenderingHint(
+                RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        // Draw the image below the control panel.
+        int imageY = getHeight() - rows * CELL_SIZE;
+        g2.drawImage(image, 0, imageY, this);
     }
-    
-    private class MySliderListener implements ChangeListener {
-        public void stateChanged(ChangeEvent ce) {
-            rule = ruleSlider.getValue();
-            ruleLabel.setText(rule + "");
-            evaluateBoard();
-        }
-    }
-    
-    private class MyFredkinListener implements ItemListener {
-        public void itemStateChanged(ItemEvent ie) {
-            evaluateBoard();
-        }
-    }
-    
-    
+
+    // -----------------------------------------------------------------------
+    // Entry point
+    // -----------------------------------------------------------------------
+
     public static void main(String[] args) {
-        JFrame f = new JFrame("Elementary Cellular Automata");
-        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        f.setLayout(new FlowLayout());
-        f.add(new ElementaryCellular(500, 500));
-        f.pack();
-        f.setVisible(true);        
+        SwingUtilities.invokeLater(() -> {
+            var frame = new JFrame("Elementary Cellular Automata");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            frame.add(new ElementaryCellular(500, 500));
+            frame.pack();
+            frame.setLocationRelativeTo(null); // centre on screen
+            frame.setVisible(true);
+        });
     }
 }
