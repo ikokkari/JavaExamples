@@ -1,108 +1,190 @@
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Iterator;
+import java.util.function.IntSupplier;
+import java.util.stream.IntStream;
 
 // https://en.wikipedia.org/wiki/Continued_fraction
 
-// A decorator that takes an existing Iterator<Integer> and treats the
-// values it produces as coefficients of a continuing fraction, and
-// produces the sequence of exact integer Fractions defined by these
-// coefficients so far.
-
+/**
+ * A continued fraction evaluator that converts a sequence of integer
+ * coefficients [a0; a1, a2, a3, ...] into successively more accurate
+ * rational approximations (convergents).
+ * <p>
+ * This class is an {@link Iterator} decorator: give it any source of
+ * integer coefficients, and it produces the sequence of {@link Fraction}
+ * values that the continued fraction defines.
+ * <p>
+ * The implementation uses the classical "matrix" recurrence for
+ * convergents, which is both faster and numerically more transparent
+ * than the original "invert and add" approach:
+ * <pre>
+ *   h(n) = a(n) * h(n-1) + h(n-2)
+ *   k(n) = a(n) * k(n-1) + k(n-2)
+ * </pre>
+ * Each convergent is then h(n)/k(n), already in lowest terms when
+ * the coefficients are positive (which they are for standard continued
+ * fraction expansions of real numbers).
+ *
+ * @author Ilkka Kokkarinen
+ */
 public class ContinuedFraction implements Iterator<Fraction> {
-    
-    // The continued fraction so far simplified to its lowest form.
-    private Fraction state = new Fraction(1);
-    // The iterator that produces the terms of this continued fraction.
-    private final Iterator<Integer> it;
-    
-    public ContinuedFraction(Iterator<Integer> it) { this.it = it; }
-    
+
+    private final Iterator<Integer> coefficients;
+    private boolean first = true;
+
+    // Matrix recurrence state: h/k tracks the current convergent,
+    // hPrev/kPrev tracks the one before it.
+    private BigInteger h = BigInteger.ONE,  k = BigInteger.ZERO;  // h(-1)/k(-1)
+    private BigInteger hPrev = BigInteger.ZERO, kPrev = BigInteger.ONE; // h(-2)/k(-2)
+
+    public ContinuedFraction(Iterator<Integer> coefficients) {
+        this.coefficients = coefficients;
+    }
+
+    @Override
     public boolean hasNext() {
-        return it.hasNext();
+        return coefficients.hasNext();
     }
-    
+
+    @Override
     public Fraction next() {
-        int v = it.next();
-        // If the current state is a/b, next state is given by 1/(v + a/b)...
-        BigInteger a = state.getNum();
-        BigInteger b = state.getDen();
-        // ...which simplifies to 1/((bv+a)/b), which equals b/(bv+a) 
-        state = new Fraction(b, b.multiply(new BigInteger(""+v)).add(a));
-        return state;
+        var a = BigInteger.valueOf(coefficients.next());
+        // The standard convergent recurrence:
+        //   h_n = a_n * h_{n-1} + h_{n-2}
+        //   k_n = a_n * k_{n-1} + k_{n-2}
+        var hNew = a.multiply(h).add(hPrev);
+        var kNew = a.multiply(k).add(kPrev);
+        hPrev = h; kPrev = k;
+        h = hNew; k = kNew;
+        return new Fraction(h, k);
     }
-    
-    /* 
-     * Output the first 1000 digits after the decimal point of the Golden ratio.
-     * Of all irrational numbers, the Golden ratio has the simplest possible
-     * representation as a continued fraction, with each term of the infinite
-     * series being equal to 1. Unfortunately, other famous irrationals such as
-     * pi and e tend to have more complicated continued fraction forms. However,
-     * this same idea generalizes to more powerful representations as sequences
-     * of integers that allows us to compute even those irrationals out up to
-     * any finite precision we wish.
+
+    // -----------------------------------------------------------------------
+    // Factory methods for common continued fraction sequences.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Return an iterator over the continued fraction coefficients of the
+     * golden ratio: [1; 1, 1, 1, ...]. The simplest possible continued
+     * fraction — every coefficient is 1. The convergents are ratios of
+     * consecutive Fibonacci numbers.
+     *
+     * @param terms how many coefficients to produce
      */
-    
-    public static void computeGoldenRatioDemo() {
-        final int PREC = 1000; // How many decimal places the result is computed to.
-        final int PERLINE = 50; // How many digits are printed per line.
-        final int N = 2300; // How many terms of continuing fractions are generated.
-        
-        // I found the value of N for the result to converge by trial and error. With
-        // some other numbers, you need some more sophisticated stopping criteria.
-        
-        // An iterator that produces a series of count copies of value v.
-        class Repeat implements Iterator<Integer> {
-            private int count;
-            private final int val;
-            public Repeat(int val, int count) {
-                this.val = val;
-                this.count = count;
-            }
-            public boolean hasNext() {
-                return count > 0;
-            }
-            public Integer next() {
-                count--; return val;
-            }
-        }
-        
-        // Iterator that produces ever more accurate approximations of Golden ratio.
-        Iterator<Fraction> goldenApprox = new ContinuedFraction(new Repeat(1, N));
-        // (Try what happens if your sequence repeats some other constant than one.)
-        
-        // Generate the approximation by evaluating the continuing fraction.
-        Fraction gf = new Fraction(1);
-        while(goldenApprox.hasNext()) {
-            gf = goldenApprox.next();
-        }
-
-        // Create BigDecimal objects from BigInteger objects we have.
-        BigDecimal num = new BigDecimal(gf.getNum());
-        BigDecimal den = new BigDecimal(gf.getDen());        
-        // Since BigDecimal divisions are generally non-terminating, you
-        // need to specify how many decimal places your want, and how you
-        // want the truncated decimal after the last one to be handled.
-        BigDecimal golden = num.divide(den, PREC, RoundingMode.FLOOR);
-        // Extract the decimals and print them on console.
-        String decimals = golden.toString(); 
-        int pos = decimals.indexOf('.') + 1;
-        System.out.println("After decimal point, first " + PREC + " decimals of Golden ratio:\n");
-        while(pos < decimals.length()) {
-            System.out.println(decimals.substring(pos, Math.min(pos + PERLINE, decimals.length())));
-            pos += PERLINE;
-        }
-        
-        // (The built-in double type has 51 bits (about 17 decimal digits)
-        // of precision that must handle both the integer and the real part
-        // of that number. Separate 12 bits of scale determine which bits
-        // represent which powers of the base two. Therefore, the double
-        // type cannot tell apart the numbers x and x+y whenever y is 18+
-        // orders of magnitude smaller than x, and x == x+y evaluates to true.)
+    public static Iterator<Integer> goldenRatioCoefficients(int terms) {
+        return IntStream.generate(() -> 1).limit(terms).iterator();
     }
 
+    /**
+     * Return an iterator over the continued fraction coefficients of
+     * sqrt(2): [1; 2, 2, 2, ...].
+     *
+     * @param terms how many coefficients to produce
+     */
+    public static Iterator<Integer> sqrt2Coefficients(int terms) {
+        return IntStream.concat(
+                IntStream.of(1),
+                IntStream.generate(() -> 2).limit(terms - 1)
+        ).iterator();
+    }
+
+    /**
+     * Return an iterator over the continued fraction coefficients of
+     * <em>e</em> (Euler's number): [2; 1, 2, 1, 1, 4, 1, 1, 6, ...].
+     * The pattern after the initial 2 is: 1, 2k, 1 for k = 1, 2, 3, ...
+     *
+     * @param terms how many coefficients to produce
+     */
+    public static Iterator<Integer> eulerCoefficients(int terms) {
+        // Euler's beautiful pattern: a(0)=2, then for n>=1,
+        // a(n) = 2*(n+1)/3 when (n % 3 == 2), else 1.
+        return IntStream.concat(
+                IntStream.of(2),
+                IntStream.range(1, terms).map(n ->
+                        (n % 3 == 2) ? 2 * (n + 1) / 3 : 1
+                )
+        ).limit(terms).iterator();
+    }
+
+    /**
+     * Evaluate a continued fraction to a {@link BigDecimal} with the
+     * given precision. This is a convenience method that exhausts the
+     * iterator and divides.
+     *
+     * @param coefficients the coefficient source
+     * @param precision    number of decimal places
+     * @return the value of the continued fraction
+     */
+    public static BigDecimal evaluate(Iterator<Integer> coefficients,
+                                       int precision) {
+        var cf = new ContinuedFraction(coefficients);
+        Fraction convergent = new Fraction(0);
+        while (cf.hasNext()) {
+            convergent = cf.next();
+        }
+        return new BigDecimal(convergent.getNum())
+                .divide(new BigDecimal(convergent.getDen()),
+                        precision, RoundingMode.HALF_EVEN);
+    }
+
+    // -----------------------------------------------------------------------
+    // Demos
+    // -----------------------------------------------------------------------
+
+    /**
+     * Pretty-print a {@link BigDecimal} with a label, showing digits
+     * grouped into lines of {@code perLine} characters.
+     */
+    private static void printDigits(String label, BigDecimal value,
+                                     int totalDigits, int perLine) {
+        String text = value.toPlainString();
+        int dot = text.indexOf('.') + 1;
+        System.out.println(label);
+        System.out.println("Integer part: " + text.substring(0, dot - 1));
+        System.out.println();
+        for (int pos = dot; pos < text.length(); pos += perLine) {
+            int end = Math.min(pos + perLine, text.length());
+            System.out.println(text.substring(pos, end));
+        }
+        System.out.println();
+    }
+
+    /**
+     * Demonstrate continued fraction computation of the golden ratio,
+     * sqrt(2), and Euler's number <em>e</em>, each to 1000 decimal places.
+     */
     public static void main(String[] args) {
-        computeGoldenRatioDemo();
+        final int DIGITS = 1000;
+        final int PER_LINE = 50;
+
+        // Golden ratio: [1; 1, 1, 1, ...] — the slowest-converging
+        // continued fraction (needs ~2300 terms for 1000 digits).
+        var golden = evaluate(goldenRatioCoefficients(2300), DIGITS);
+        printDigits("Golden ratio φ = (1 + √5) / 2", golden, DIGITS, PER_LINE);
+
+        // sqrt(2): [1; 2, 2, 2, ...] — converges faster than golden ratio.
+        var root2 = evaluate(sqrt2Coefficients(1500), DIGITS);
+        printDigits("√2", root2, DIGITS, PER_LINE);
+
+        // Euler's number: [2; 1, 2, 1, 1, 4, 1, 1, 6, ...] — converges
+        // quite quickly thanks to the growing coefficients.
+        var euler = evaluate(eulerCoefficients(3000), DIGITS);
+        printDigits("Euler's number e", euler, DIGITS, PER_LINE);
+
+        // Show convergents of the golden ratio to illustrate how the
+        // approximations are ratios of consecutive Fibonacci numbers.
+        System.out.println("First 15 convergents of the golden ratio:");
+        var cf = new ContinuedFraction(goldenRatioCoefficients(15));
+        int n = 0;
+        while (cf.hasNext()) {
+            Fraction f = cf.next();
+            BigDecimal approx = new BigDecimal(f.getNum())
+                    .divide(new BigDecimal(f.getDen()), 15, RoundingMode.HALF_EVEN);
+            System.out.printf("  c(%2d) = %8s / %-8s ≈ %s%n",
+                    n++, f.getNum(), f.getDen(), approx);
+        }
     }
 }
